@@ -1,0 +1,5 @@
+<resources>
+    <string name="app_name">AutoClick</string>
+    <string name="accessibility_service_label">小猪看这里</string>
+    <string name="description">小猪把它打开然后返回软件点开始</string>
+</resources>
