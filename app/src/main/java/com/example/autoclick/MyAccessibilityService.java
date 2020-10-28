@@ -4,7 +4,9 @@ import android.accessibilityservice.AccessibilityService;
 import android.accessibilityservice.GestureDescription;
 import android.app.Service;
 import android.content.Intent;
+import android.content.ServiceConnection;
 import android.graphics.Path;
+import android.graphics.Rect;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.IBinder;
@@ -12,135 +14,158 @@ import android.text.TextUtils;
 import android.util.Log;
 import android.view.accessibility.AccessibilityEvent;
 import android.view.accessibility.AccessibilityNodeInfo;
+import android.view.accessibility.AccessibilityWindowInfo;
 import android.widget.ArrayAdapter;
 import android.widget.AutoCompleteTextView;
+import android.widget.Button;
 import android.widget.Toast;
 
 import androidx.annotation.RequiresApi;
 
+import org.greenrobot.eventbus.EventBus;
+
 
 public class MyAccessibilityService extends AccessibilityService {
     private static final String TAG = "aaaa";
-    public static int done = 0;
+
+    @Override
+    protected void onServiceConnected() {
+        super.onServiceConnected();
+
+        Log.i(TAG, "无障碍服务已开启: ");
+        EventBus.getDefault().post(new EventStub(true));
+        Toast.makeText(this, "无障碍服务已开启,请返回软件启动", Toast.LENGTH_SHORT).show();
+    }
+
+
+    @Override
+    public int onStartCommand(Intent intent, int flags, int startId) {
+        keyword = intent.getStringExtra("key");
+
+        return START_STICKY;
+    }
+
+    private String keyword = "";
+    AccessibilityNodeInfo rootInfo = null;
 
     @Override
     public void onAccessibilityEvent(AccessibilityEvent event) {
-
-
-
+        if (keyword.equals("")) {
+            Log.i(TAG, "关键词为空 不执行: ");
+            //  Toast.makeText(this, "为获取到关键字，返回重试", Toast.LENGTH_SHORT).show();
+            return;
+        }
         try {
+
+            for (AccessibilityWindowInfo accessibilityWindowInfo : getWindows()) {
+                if (accessibilityWindowInfo.getRoot().getPackageName().equals("com.taobao.taobao")) {
+                    rootInfo = accessibilityWindowInfo.getRoot();
+                    break;
+                }
+            }
             //拿到根节点
-            AccessibilityNodeInfo rootInfo = getRootInActiveWindow();
+
             if (rootInfo == null) {
+                Log.i(TAG, "   root info ==null");
                 return;
             }
             //开始找目标节点，这里拎出来细讲，直接往下看正文
             if (rootInfo.getChildCount() != 0) {
                 MyTask(rootInfo);
+                Log.i(TAG, "开始执行任务");
             }
         } catch (Exception e) {
-            Log.i(TAG, "onAccessibilityEvent: " + e);
+
         }
     }
-
-    private void MyGesture(){//仿滑动
-        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.N) {
-            Path path = new Path();
-            path.moveTo(1000, 1000);//滑动起点
-            path.lineTo(2000, 1000);//滑动终点
-            GestureDescription.Builder builder = new GestureDescription.Builder();
-            GestureDescription description = builder.addStroke(new GestureDescription.StrokeDescription(path, 100L, 100L)).build();
-            dispatchGesture(description, new MyCallBack(), null);
-        }
-    }
-
-    @RequiresApi(api = Build.VERSION_CODES.N)
-    private class MyCallBack extends GestureResultCallback {
-        public MyCallBack() {
-            super();
-        }
-
-        @Override
-        public void onCompleted(GestureDescription gestureDescription) {
-            super.onCompleted(gestureDescription);
-            Log.i(TAG, "onCompleted: ");
-        }
-
-        @Override
-        public void onCancelled(GestureDescription gestureDescription) {
-            super.onCancelled(gestureDescription);
-            Log.i(TAG, "onCancelled: ");
-        }
-    }
-
 
     @Override
     public void onInterrupt() {
-        Log.i(TAG, "onInterrupt: ");
+
     }
 
-    private void changeInput(AccessibilityNodeInfo info,String text) {  //改变editText的内容
-        Bundle arguments = new Bundle();
-        arguments.putCharSequence(AccessibilityNodeInfo.ACTION_ARGUMENT_SET_TEXT_CHARSEQUENCE,
-                text);
-        info.performAction(AccessibilityNodeInfo.ACTION_SET_TEXT, arguments);
-    }
 
     private void MyTask(AccessibilityNodeInfo rootInfo) {
         if (rootInfo == null || TextUtils.isEmpty(rootInfo.getClassName())) {
+            Log.i(TAG, "MyTask: 根节点不存在或根节点类名为空");
             return;
         }
+        Log.i(TAG, "findByText: 开始查找字段````````" + keyword);
         //开始去找
-       findByID(rootInfo, "com.tencent.mobileqq:id/chat_item_content_layout");
+        // findByID(rootInfo, "com.tencent.mobileqq:id/chat_item_content_layout");
+//        if (findByText(rootInfo, keyword) != null) {
+//            Log.i(TAG, "MyTask: " + rootInfo);
+//        }
+        get(rootInfo);
+
     }
 
-    private AccessibilityNodeInfo findByText(AccessibilityNodeInfo rootInfo, String text) {
+
+    private AccessibilityNodeInfo back;
+
+    private AccessibilityNodeInfo get(AccessibilityNodeInfo rootInfo) {
         if (rootInfo.getChildCount() > 0) {
             for (int i = 0; i < rootInfo.getChildCount(); i++) {
-                AccessibilityNodeInfo child = rootInfo.getChild(i);
-                try {
-                    if (child.findAccessibilityNodeInfosByViewId(text).size() > 0) {
-                        for (AccessibilityNodeInfo info : child.findAccessibilityNodeInfosByViewId(text)) {
+                AccessibilityNodeInfo info = rootInfo.getChild(i);
+                if (info.getClassName() != null &&
+                        (info.getClassName().toString().contains("android.widget.FrameLayout")
+                                || info.getClassName().toString().contains("android.widget.Button")
+                        )) {
 
-                            if (info.getText().toString().equals(text)) {
-                                performClick(getClickable(info));
-                                return null;
-//                                performClick(info);
-                            }
-                        }
+                    if (info.getContentDescription() != null && info.getContentDescription().toString().contains("返回")) {
+                        back = info;
+                        Log.i(TAG, "找到返回节点 ");
                     }
-                } catch (NullPointerException e) {
+                    if (info.getText() != null && info.getText().toString().contains("返回")) {
+                        back = info;
+                        Log.i(TAG, "找到返回节点 ");
+                    }
                 }
-                findByText(child, text);
+
+                if (info.getClassName() != null && info.getClassName().toString().contains("android.view.View")) {
+
+                    if (info.getContentDescription() != null && (info.getContentDescription().toString().contains("任务完成")
+                            || info.getContentDescription().toString().contains("任务已经") || info.getText().toString().contains("任务已完成"))) {
+                        if (back != null) {
+                            performClick(getClickable(back));
+                            Log.i(TAG, "完成 返回列表 ");
+                        }
+                        performClick(getClickable(info));
+                        Log.i(TAG, "完成 返回列表 ");
+                    }
+                    if (info.getText() != null && (info.getText().toString().contains("任务完成")
+                            || info.getText().toString().contains("任务已经") || info.getText().toString().contains("任务已完成"))) {
+                        if (back != null) {
+                            performClick(getClickable(back));
+                            Log.i(TAG, "完成 返回列表 ");
+                        }
+                        performClick(getClickable(info));
+                        Log.i(TAG, "完成 返回列表 ");
+                    }
+                }
+
+
+                if (info.getClassName() != null && info.getClassName().toString().contains("android.widget.Button")) {
+                    if (info.getText() != null && info.getText().toString().contains(keyword)) {
+                        Log.i(TAG, "找到节点 点击 " + keyword);
+                        performClick(getClickable(info));
+                    }
+                }
+
+
+                if (rootInfo.getChild(i).getChildCount() > 0) {
+                    Log.i("findnode", "father " +  info.getClassName() + info.getText()
+                            + "desp" + info.getContentDescription());
+                    get(rootInfo.getChild(i));
+                } else {
+                    Log.i("findnode", "son: " + info.getClassName() + info.getText()
+                            + "desp" + info.getContentDescription());
+                }
             }
         }
         return null;
-
     }
 
-
-    private AccessibilityNodeInfo findByID(AccessibilityNodeInfo rootInfo, String text) {
-        if (rootInfo.getChildCount() > 0) {
-            for (int i = 0; i < rootInfo.getChildCount(); i++) {
-                AccessibilityNodeInfo child = rootInfo.getChild(i);
-                try {
-                    if (child.findAccessibilityNodeInfosByViewId(text).size() > 0) {
-                        for (AccessibilityNodeInfo info : child.findAccessibilityNodeInfosByViewId(text)) {
-                            performClick(getClickable(info));
-//                        performGlobalAction(GLOBAL_ACTION_NOTIFICATIONS); //模仿全局手势
-                            return null;
-                        }
-                    }
-
-                } catch (NullPointerException e) {
-                }
-                findByID(child, text);
-            }
-        }
-        return null;
-
-
-    }
 
     //有些节点不可点击 点击交给父级甚至父级的父级...来做的。
     private AccessibilityNodeInfo getClickable(AccessibilityNodeInfo info) {
@@ -157,6 +182,10 @@ public class MyAccessibilityService extends AccessibilityService {
      */
 
     private void performClick(AccessibilityNodeInfo targetInfo) {
-        targetInfo.performAction(AccessibilityNodeInfo.ACTION_CLICK);
+        MyPost.postDelayed(2000, () -> {
+            Log.i(TAG, "点击: " + targetInfo.getText() + "````" + targetInfo.getClassName());
+            targetInfo.performAction(AccessibilityNodeInfo.ACTION_CLICK);
+        });
+
     }
 }

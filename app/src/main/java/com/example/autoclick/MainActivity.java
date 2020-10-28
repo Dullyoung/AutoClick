@@ -1,145 +1,153 @@
 package com.example.autoclick;
 
-import androidx.appcompat.app.AppCompatActivity;
-
-import android.app.Activity;
+import android.app.Service;
+import android.content.ComponentName;
+import android.content.Context;
 import android.content.Intent;
-import android.graphics.Point;
+import android.content.ServiceConnection;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.IBinder;
 import android.provider.Settings;
 import android.util.Log;
-import android.view.MotionEvent;
 import android.view.View;
-import android.view.accessibility.AccessibilityNodeInfo;
-import android.widget.Button;
-import android.widget.LinearLayout;
+import android.widget.TextView;
 import android.widget.Toast;
 
-import java.io.IOException;
+import androidx.appcompat.app.AppCompatActivity;
 
-import static com.example.autoclick.MyAccessibilityService.done;
+import org.greenrobot.eventbus.EventBus;
+import org.greenrobot.eventbus.Subscribe;
+import org.greenrobot.eventbus.ThreadMode;
 
-public class MainActivity extends AppCompatActivity implements View.OnTouchListener {
-    LinearLayout linearLayout;
-    AutoTouch autoTouch = new AutoTouch();
+import butterknife.BindView;
+import butterknife.ButterKnife;
+import butterknife.OnClick;
 
+
+public class MainActivity extends AppCompatActivity {
+
+
+    @BindView(R.id.tv_state)
+    TextView mTvState;
+    @BindView(R.id.tv_desp)
+    TextView mTvDesp;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        linearLayout = findViewById(R.id.text_my);
-        findViewById(R.id.t1).setOnClickListener(v -> {
-            Intent intent = new Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS);
-            //   intent.setData(Uri.fromParts("package",getPackageName(), null));
-            startActivity(intent);
-        });
-        findViewById(R.id.t1).performClick();
-        findViewById(R.id.t2).setOnClickListener(v -> {
-            startService(new Intent(this, MyAccessibilityService.class));
-            done = 0;
-            v.postDelayed(() -> MyUtils.chatWithQQ(this,"664846453"),500);
-        });
-
-
-
-
+        ButterKnife.bind(this);
+        mTvState.setText("无障碍服务未开启，点击授权去开启无障碍服务 - 大杨的双十一辅助");
+        if (!EventBus.getDefault().isRegistered(this)) {
+            EventBus.getDefault().register(this);
+        }
     }
 
     @Override
-    public boolean onTouch(View v, MotionEvent event) {
-        switch (event.getAction()) {
-            case MotionEvent.ACTION_DOWN:
-
-                Log.i("aaaaa", "ACTION_DOWN: " + event.getX() + "," + event.getY());
-                break;
-            case MotionEvent.ACTION_MOVE:
-                Log.i("aaaaa", "ACTION_MOVE: " + event.getX() + "," + event.getY());
-                break;
-            case MotionEvent.ACTION_UP:
-                Log.i("aaaaa", "up: " + event.getX() + "," + event.getY());
-                break;
-            default:
-                break;
-
+    protected void onDestroy() {
+        super.onDestroy();
+        if (EventBus.getDefault().isRegistered(this)) {
+            EventBus.getDefault().unregister(this);
         }
-        return true;
+    }
+
+    boolean isOpen = false;
+
+    @Subscribe(threadMode = ThreadMode.MAIN)
+    public void onMsg(EventStub eventStub) {
+        if (eventStub.isOpen()) {
+            mTvState.setText("无障碍服务已开启，去开始任务吧~");
+            mTvDesp.setText("点击方式是根据文字来的，三种任务自己选");
+            isOpen = true;
+        } else {
+            mTvState.setText("无障碍服务未开启，点击授权去开启无障碍服务 - 大杨的双十一辅助");
+            isOpen = false;
+        }
+
+    }
+
+    private Intent intent2;
+
+
+    @OnClick({R.id.btn_permission, R.id.btn_start, R.id.btn_start2, R.id.btn_close, R.id.tv_alipay, R.id.tv_qq})
+    public void onViewClicked(View view) {
+        switch (view.getId()) {
+            case R.id.btn_permission:
+                Intent intent = new Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS);
+                startActivity(intent);
+                break;
+            case R.id.btn_start:
+                if (!isOpen) {
+                    Toast.makeText(this, "先开启无障碍权限", Toast.LENGTH_SHORT).show();
+                    return;
+                }
+                if (intent2 != null) {
+                    stopService(intent2);
+                }
+                intent2 = new Intent(this, MyAccessibilityService.class);
+                intent2.putExtra("key", "去完成");
+                startService(intent2);
+                mTvDesp.setText("正在执行“去完成”任务，打开任务列表即可");
+                break;
+            case R.id.btn_start2:
+                if (!isOpen) {
+                    Toast.makeText(this, "先开启无障碍权限", Toast.LENGTH_SHORT).show();
+                    return;
+                }
+                if (intent2 != null) {
+                    stopService(intent2);
+                }
+                intent2 = new Intent(this, MyAccessibilityService.class);
+                intent2.putExtra("key", "去浏览");
+                startService(intent2);
+                mTvDesp.setText("正在执行“去浏览”任务，打开任务列表即可");
+                break;
+            case R.id.btn_close:
+                if (!isOpen) {
+                    Toast.makeText(this, "先开启无障碍权限", Toast.LENGTH_SHORT).show();
+                    return;
+                }
+                if (intent2 != null) {
+                    stopService(intent2);
+                }
+                intent2 = new Intent(this, MyAccessibilityService.class);
+                intent2.putExtra("key", "去搜索");
+                startService(intent2);
+                mTvDesp.setText("正在执行“去搜索”任务，打开任务列表即可");
+                break;
+            case R.id.tv_alipay:
+                goToAliPayTransferMoneyPerson(this, "6.66", "好活~当赏~", "2088612672749295");
+                break;
+            case R.id.tv_qq:
+                chatWithQQ(this, 664846453 + "");
+                break;
+        }
     }
 
 
-    public class AutoTouch {
-        public int width = 0;
-        public int height = 0;
-
-        /**
-         * 传入在屏幕中的比例位置，坐标左上角为基准
-         *
-         * @param act    传入Activity对象
-         * @param ratioX 需要点击的x坐标在屏幕中的比例位置
-         * @param ratioY 需要点击的y坐标在屏幕中的比例位置
-         */
-        public void autoClickRatio(Activity act, final double ratioX, final double ratioY) {
-            Point point = new Point();
-            act.getWindowManager().getDefaultDisplay().getSize(point);
-            width = point.x;
-            height = point.y;
-            new Thread(new Runnable() {
-                @Override
-                public void run() {
-                    // 线程睡眠0.3s
-                    try {
-                        Thread.sleep(300);
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    }
-                    // 生成点击坐标
-                    int x = (int) (width * ratioX);
-                    int y = (int) (height * ratioY);
-
-                    // 利用ProcessBuilder执行shell命令
-                    String[] order = {"input", "tap", "", "" + x, "" + y};
-                    try {
-                        new ProcessBuilder(order).start();
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
-                }
-            }).start();
-        }
-
-        /**
-         * 传入在屏幕中的坐标，坐标左上角为基准
-         *
-         * @param act 传入Activity对象
-         * @param x   需要点击的x坐标
-         * @param y   需要点击的x坐标
-         */
-        public void autoClickPos(Activity act, final double x, final double y) {
-            Point point = new Point();
-            act.getWindowManager().getDefaultDisplay().getSize(point);
-            width = point.x;
-            height = point.y;
-            new Thread(new Runnable() {
-                @Override
-                public void run() {
-                    // 线程睡眠0.3s
-                    try {
-                        Thread.sleep(300);
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    }
-
-                    // 利用ProcessBuilder执行shell命令
-                    String[] order = {"input", "tap", "" + x, "" + y};
-                    try {
-                        new ProcessBuilder(order).start();
-                        Log.i("aaaa", "run: ");
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
-                }
-            }).start();
+    //普通转账界面 可以自动填写金额和备注 但是可以修改
+    public static void goToAliPayTransferMoneyPerson(Context context, String money, String remarks, String userID) {
+        String uri = "alipays://platformapi/startapp?appId=09999988&actionType=toAccount&goBack=NO&amount=" + money + "&userId=" + userID + "&memo=" + remarks;
+        Intent intent = null;
+        try {
+            intent = Intent.parseUri(uri, Intent.URI_INTENT_SCHEME);
+            context.startActivity(intent);
+        } catch (Exception e) {
+            Toast.makeText(context, "支付宝未安装或版本不支持", Toast.LENGTH_SHORT).show();
+            e.printStackTrace();
         }
     }
+
+    public static void chatWithQQ(final Context context, String qq) {
+        try {
+            String url = "mqqwpa://im/chat?chat_type=wpa&uin=" + qq;
+            context.startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(url)));
+        } catch (Exception e) {
+            Toast.makeText(context, "手机QQ未安装或该版本不支持", Toast.LENGTH_SHORT).show();
+        }
+
+    }
+
+
 }
