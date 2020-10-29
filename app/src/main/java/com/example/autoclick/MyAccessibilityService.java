@@ -114,7 +114,6 @@ public class MyAccessibilityService extends AccessibilityService {
     private void back(AccessibilityNodeInfo info) {
         if (System.currentTimeMillis() - time > 10000) {
             MyPost.postDelayed(2000,() -> {
-                info.performAction(AccessibilityNodeInfo.ACTION_SCROLL_BACKWARD);
                 performGlobalAction(AccessibilityService.GLOBAL_ACTION_BACK);
                 time = System.currentTimeMillis();
             });
