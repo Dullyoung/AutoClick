@@ -38,8 +38,10 @@ public class MyAccessibilityService extends AccessibilityService {
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-        keyword = intent.getStringExtra("key");
-        Log.i(TAG, "onStartCommand: " + keyword);
+        if (intent!=null){
+            keyword = intent.getStringExtra("key");
+            Log.i(TAG, "onStartCommand: " + keyword);
+        }
         return super.onStartCommand(intent, flags, startId);
     }
 
@@ -109,14 +111,57 @@ public class MyAccessibilityService extends AccessibilityService {
 
     private AccessibilityNodeInfo back;
 
-    long time;
+    private long clickBackTime;
+
+
+    private void MyGesture() {//仿滑动
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.N) {
+            Path path = new Path();
+            path.moveTo(500, 1000);//滑动起点
+            path.lineTo(500, 500);//滑动终点
+            GestureDescription.Builder builder = new GestureDescription.Builder();
+            GestureDescription description = builder.addStroke(new GestureDescription.StrokeDescription(path,
+                    1000L, 1000L)).build();
+            //100L 第一个是开始的时间，第二个是持续时间
+            dispatchGesture(description, new MyCallBack(), null);
+            if (!isBackClicked) {
+                MyPost.postDelayed(1000, this::MyGesture);
+            }
+        }
+    }
+
+    private boolean isBackClicked = false;
+
+    //模拟手势的监听
+    @RequiresApi(api = Build.VERSION_CODES.N)
+    private class MyCallBack extends GestureResultCallback {
+        public MyCallBack() {
+            super();
+        }
+
+        @Override
+        public void onCompleted(GestureDescription gestureDescription) {
+            super.onCompleted(gestureDescription);
+            Log.i(TAG, "onCompleted: " + gestureDescription);
+        }
+
+        @Override
+        public void onCancelled(GestureDescription gestureDescription) {
+            super.onCancelled(gestureDescription);
+            Log.i(TAG, "onCancelled: " + gestureDescription);
+        }
+    }
+
 
     private void back(AccessibilityNodeInfo info) {
-        if (System.currentTimeMillis() - time > 10000) {
-            MyPost.postDelayed(2000,() -> {
-                performGlobalAction(AccessibilityService.GLOBAL_ACTION_BACK);
-                time = System.currentTimeMillis();
-            });
+        if (System.currentTimeMillis() - clickBackTime > 3000) {
+
+            performGlobalAction(GLOBAL_ACTION_BACK);
+            isBackClicked = true;
+            clickBackTime = System.currentTimeMillis();
+            Log.i("performBack", "back: ");
+
+
         }
     }
 
@@ -133,26 +178,33 @@ public class MyAccessibilityService extends AccessibilityService {
                 if (info.getContentDescription() != null && (
                         info.getContentDescription().toString().contains("任务完成")
                                 || info.getContentDescription().toString().contains("任务已经")
+                                || info.getContentDescription().toString().contains("全部完成啦")
                                 || info.getContentDescription().toString().contains("任务已完成"))) {
-                    back(info);
-                    Log.i("success", "完成 返回列表 ");
+                    MyPost.postDelayed(1000, () -> {
+                        back(info);
+                        Log.i("success", "完成 返回列表 ");
+                    });
                 }
 
 
                 if (info.getText() != null && (
                         info.getText().toString().contains("任务完成")
                                 || info.getText().toString().contains("任务已经")
+                                || info.getText().toString().contains("全部完成啦")
                                 || info.getText().toString().contains("任务已完成"))) {
-
-                    back(info);
-                    Log.i("success", "完成 返回列表 ");
+                    MyPost.postDelayed(1000, () -> {
+                        back(info);
+                        Log.i("success", "完成 返回列表 ");
+                    });
                 }
 
 
                 if (info.getClassName() != null && info.getClassName().toString().contains("android.widget.Button")) {
                     if (info.getText() != null && info.getText().toString().contains(keyword)) {
-                        Log.i("success", "找到节点 点击 " + keyword);
-                        performClick(getClickable(info));
+                        MyPost.postDelayed(2000, () -> {
+                            Log.i("success", "找到节点 点击 " + keyword);
+                            performClick(getClickable(info));
+                        });
                     }
                 }
 
@@ -194,11 +246,18 @@ public class MyAccessibilityService extends AccessibilityService {
      * 深度优先遍历寻找目标节点
      */
 
+    private long clickTime;
+
     private void performClick(AccessibilityNodeInfo targetInfo) {
-        MyPost.postDelayed(2000, () -> {
+
+        if (System.currentTimeMillis() - clickTime > 3000) {
             Log.i("click", "点击: " + targetInfo.getText() + "````" + targetInfo.getClassName());
             targetInfo.performAction(AccessibilityNodeInfo.ACTION_CLICK);
-        });
+            clickTime = System.currentTimeMillis();
+            MyPost.postDelayed(5000, this::MyGesture);
+            isBackClicked = false;
+        }
+
     }
 
 
