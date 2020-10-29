@@ -24,6 +24,9 @@ import androidx.annotation.RequiresApi;
 
 import org.greenrobot.eventbus.EventBus;
 
+import java.math.RoundingMode;
+import java.util.Random;
+
 
 public class MyAccessibilityService extends AccessibilityService {
     private static final String TAG = "aaaa";
@@ -38,7 +41,7 @@ public class MyAccessibilityService extends AccessibilityService {
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-        if (intent!=null){
+        if (intent != null) {
             keyword = intent.getStringExtra("key");
             Log.i(TAG, "onStartCommand: " + keyword);
         }
@@ -117,18 +120,31 @@ public class MyAccessibilityService extends AccessibilityService {
     private void MyGesture() {//仿滑动
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.N) {
             Path path = new Path();
-            path.moveTo(500, 1000);//滑动起点
-            path.lineTo(500, 500);//滑动终点
+            int x1 = new Random(System.currentTimeMillis()).nextInt(100) + 500;
+            int x2 = new Random(System.currentTimeMillis()).nextInt(100) + 500;
+            int y1 = new Random(System.currentTimeMillis()).nextInt(100) + 1000;
+            int y2 = new Random(System.currentTimeMillis()).nextInt(100) + 500;
+            path.moveTo(x1, y1);   //滑动起点
+            path.lineTo(x2, y2);//滑动终点
+
             GestureDescription.Builder builder = new GestureDescription.Builder();
-            GestureDescription description = builder.addStroke(new GestureDescription.StrokeDescription(path,
-                    1000L, 1000L)).build();
+            long startTime = new Random(System.currentTimeMillis()).nextInt(100) + 200;
+            long duration = new Random(System.currentTimeMillis()).nextInt(100) + 500;
+            GestureDescription description = builder.addStroke(new GestureDescription.StrokeDescription(path, startTime, duration)).build();
+
             //100L 第一个是开始的时间，第二个是持续时间
             dispatchGesture(description, new MyCallBack(), null);
-            if (!isBackClicked) {
-                MyPost.postDelayed(1000, this::MyGesture);
+            if (!isBackClicked && System.currentTimeMillis() - scrollTime > 5000) {
+              //  MyGesture();
+                isBackClicked = true;
+                scrollTime = System.currentTimeMillis();
+                Log.i("MyGesture", "MyGesture: x1:" + x1 + "`y1:" + y1 + "`x2:" + x2 + "`y2:" + y2);
+                Log.i("MyGesture", "MyGesture:startTime " + startTime + "duration:" + duration);
             }
         }
     }
+
+    private long scrollTime;
 
     private boolean isBackClicked = false;
 
@@ -167,6 +183,7 @@ public class MyAccessibilityService extends AccessibilityService {
 
 
     private AccessibilityNodeInfo get(AccessibilityNodeInfo rootInfo) {
+        isBackClicked = false;
         if (rootInfo.getChildCount() > 0) {
             for (int i = 0; i < rootInfo.getChildCount(); i++) {
                 AccessibilityNodeInfo info = rootInfo.getChild(i);
@@ -226,11 +243,6 @@ public class MyAccessibilityService extends AccessibilityService {
         return null;
     }
 
-    void redo() {
-
-
-    }
-
 
     //有些节点不可点击 点击交给父级甚至父级的父级...来做的。
     private AccessibilityNodeInfo getClickable(AccessibilityNodeInfo info) {
@@ -254,7 +266,7 @@ public class MyAccessibilityService extends AccessibilityService {
             Log.i("click", "点击: " + targetInfo.getText() + "````" + targetInfo.getClassName());
             targetInfo.performAction(AccessibilityNodeInfo.ACTION_CLICK);
             clickTime = System.currentTimeMillis();
-            MyPost.postDelayed(5000, this::MyGesture);
+          // MyPost.postDelayed(5000, this::MyGesture);
             isBackClicked = false;
         }
 
