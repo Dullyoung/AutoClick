@@ -31,9 +31,7 @@ public class MyAccessibilityService extends AccessibilityService {
     @Override
     protected void onServiceConnected() {
         super.onServiceConnected();
-
         Log.i(TAG, "无障碍服务已开启: ");
-        EventBus.getDefault().post(new EventStub(true));
         Toast.makeText(this, "无障碍服务已开启,请返回软件启动", Toast.LENGTH_SHORT).show();
     }
 
@@ -41,8 +39,8 @@ public class MyAccessibilityService extends AccessibilityService {
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
         keyword = intent.getStringExtra("key");
-
-        return START_STICKY;
+        Log.i(TAG, "onStartCommand: " + keyword);
+        return super.onStartCommand(intent, flags, startId);
     }
 
     private String keyword = "";
@@ -55,27 +53,23 @@ public class MyAccessibilityService extends AccessibilityService {
             //  Toast.makeText(this, "为获取到关键字，返回重试", Toast.LENGTH_SHORT).show();
             return;
         }
-        try {
 
-            for (AccessibilityWindowInfo accessibilityWindowInfo : getWindows()) {
-                if (accessibilityWindowInfo.getRoot().getPackageName().equals("com.taobao.taobao")) {
-                    rootInfo = accessibilityWindowInfo.getRoot();
-                    break;
-                }
-            }
-            //拿到根节点
-
-            if (rootInfo == null) {
-                Log.i(TAG, "   root info ==null");
-                return;
-            }
-            //开始找目标节点，这里拎出来细讲，直接往下看正文
-            if (rootInfo.getChildCount() != 0) {
-                MyTask(rootInfo);
-                Log.i(TAG, "开始执行任务");
-            }
-        } catch (Exception e) {
-
+//
+//            for (AccessibilityWindowInfo accessibilityWindowInfo : getWindows()) {
+//
+//                if (accessibilityWindowInfo.getRoot().getPackageName().equals("com.taobao.taobao")) {
+//                    rootInfo = accessibilityWindowInfo.getRoot();
+//                }
+//
+        rootInfo = event.getSource();
+        //拿到根节点
+//开始找目标节点，这里拎出来细讲，直接往下看正文
+        if (rootInfo != null && rootInfo.getChildCount() != 0) {
+            MyTask(rootInfo);
+            Log.i(TAG, "开始执行任务");
+            EventBus.getDefault().post(new EventStub(keyword));
+        } else {
+            Log.i(TAG, "rootInfo==null");
         }
     }
 
@@ -84,6 +78,12 @@ public class MyAccessibilityService extends AccessibilityService {
 
     }
 
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
+        Log.i(TAG, "onDestroy: ");
+        EventBus.getDefault().post(new EventStub("停止"));
+    }
 
     private void MyTask(AccessibilityNodeInfo rootInfo) {
         if (rootInfo == null || TextUtils.isEmpty(rootInfo.getClassName())) {
@@ -100,70 +100,84 @@ public class MyAccessibilityService extends AccessibilityService {
 
     }
 
+    @Override
+    public boolean onUnbind(Intent intent) {
+        Toast.makeText(this, "停止运行", Toast.LENGTH_SHORT).show();
+        EventBus.getDefault().post(new EventStub("停止运行"));
+        return super.onUnbind(intent);
+    }
 
     private AccessibilityNodeInfo back;
+
+    long time;
+
+    private void back(AccessibilityNodeInfo info) {
+        if (System.currentTimeMillis() - time > 10000) {
+            MyPost.postDelayed(2000,() -> {
+                info.performAction(AccessibilityNodeInfo.ACTION_SCROLL_BACKWARD);
+                performGlobalAction(AccessibilityService.GLOBAL_ACTION_BACK);
+                time = System.currentTimeMillis();
+            });
+        }
+    }
+
 
     private AccessibilityNodeInfo get(AccessibilityNodeInfo rootInfo) {
         if (rootInfo.getChildCount() > 0) {
             for (int i = 0; i < rootInfo.getChildCount(); i++) {
                 AccessibilityNodeInfo info = rootInfo.getChild(i);
-                if (info.getClassName() != null &&
-                        (info.getClassName().toString().contains("android.widget.FrameLayout")
-                                || info.getClassName().toString().contains("android.widget.Button")
-                        )) {
-
-                    if (info.getContentDescription() != null && info.getContentDescription().toString().contains("返回")) {
-                        back = info;
-                        Log.i(TAG, "找到返回节点 ");
-                    }
-                    if (info.getText() != null && info.getText().toString().contains("返回")) {
-                        back = info;
-                        Log.i(TAG, "找到返回节点 ");
-                    }
+                if (info == null) {
+                    continue;
                 }
 
-                if (info.getClassName() != null && info.getClassName().toString().contains("android.view.View")) {
 
-                    if (info.getContentDescription() != null && (info.getContentDescription().toString().contains("任务完成")
-                            || info.getContentDescription().toString().contains("任务已经") || info.getText().toString().contains("任务已完成"))) {
-                        if (back != null) {
-                            performClick(getClickable(back));
-                            Log.i(TAG, "完成 返回列表 ");
-                        }
-                        performClick(getClickable(info));
-                        Log.i(TAG, "完成 返回列表 ");
-                    }
-                    if (info.getText() != null && (info.getText().toString().contains("任务完成")
-                            || info.getText().toString().contains("任务已经") || info.getText().toString().contains("任务已完成"))) {
-                        if (back != null) {
-                            performClick(getClickable(back));
-                            Log.i(TAG, "完成 返回列表 ");
-                        }
-                        performClick(getClickable(info));
-                        Log.i(TAG, "完成 返回列表 ");
-                    }
+                if (info.getContentDescription() != null && (
+                        info.getContentDescription().toString().contains("任务完成")
+                                || info.getContentDescription().toString().contains("任务已经")
+                                || info.getContentDescription().toString().contains("任务已完成"))) {
+                    back(info);
+                    Log.i("success", "完成 返回列表 ");
+                }
+
+
+                if (info.getText() != null && (
+                        info.getText().toString().contains("任务完成")
+                                || info.getText().toString().contains("任务已经")
+                                || info.getText().toString().contains("任务已完成"))) {
+
+                    back(info);
+                    Log.i("success", "完成 返回列表 ");
                 }
 
 
                 if (info.getClassName() != null && info.getClassName().toString().contains("android.widget.Button")) {
                     if (info.getText() != null && info.getText().toString().contains(keyword)) {
-                        Log.i(TAG, "找到节点 点击 " + keyword);
+                        Log.i("success", "找到节点 点击 " + keyword);
                         performClick(getClickable(info));
                     }
                 }
 
 
                 if (rootInfo.getChild(i).getChildCount() > 0) {
-                    Log.i("findnode", "father " +  info.getClassName() + info.getText()
-                            + "desp" + info.getContentDescription());
+                    Log.i("findnode", rootInfo.getChildCount() + "father " + info.getClassName() + info.getText()
+                            + "desp" + info.getContentDescription() + "hascode" + info.hashCode());
                     get(rootInfo.getChild(i));
                 } else {
                     Log.i("findnode", "son: " + info.getClassName() + info.getText()
-                            + "desp" + info.getContentDescription());
+                            + "desp" + info.getContentDescription() + "hascode" + info.hashCode());
                 }
             }
+
+
         }
+
+
         return null;
+    }
+
+    void redo() {
+
+
     }
 
 
@@ -183,9 +197,10 @@ public class MyAccessibilityService extends AccessibilityService {
 
     private void performClick(AccessibilityNodeInfo targetInfo) {
         MyPost.postDelayed(2000, () -> {
-            Log.i(TAG, "点击: " + targetInfo.getText() + "````" + targetInfo.getClassName());
+            Log.i("click", "点击: " + targetInfo.getText() + "````" + targetInfo.getClassName());
             targetInfo.performAction(AccessibilityNodeInfo.ACTION_CLICK);
         });
-
     }
+
+
 }

@@ -38,10 +38,14 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         ButterKnife.bind(this);
-        mTvState.setText("无障碍服务未开启，点击授权去开启无障碍服务 - 大杨的双十一辅助");
+        mTvState.setText("说明：\n1.需要自己到手机相应位置设置允许后台运行权限，不然部分机型运行一分钟左右后台进程就被系统杀了。" +
+                "\n2.开启无障碍服务 - 大杨的双十一辅助" +
+                "\n3.点击方式是根据文字来的，三种任务自己选" +
+                "\n4.如果开了后台权限，用完了记得关闭无障碍，不然会一直运行");
         if (!EventBus.getDefault().isRegistered(this)) {
             EventBus.getDefault().register(this);
         }
+
     }
 
     @Override
@@ -52,19 +56,10 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    boolean isOpen = false;
 
     @Subscribe(threadMode = ThreadMode.MAIN)
     public void onMsg(EventStub eventStub) {
-        if (eventStub.isOpen()) {
-            mTvState.setText("无障碍服务已开启，去开始任务吧~");
-            mTvDesp.setText("点击方式是根据文字来的，三种任务自己选");
-            isOpen = true;
-        } else {
-            mTvState.setText("无障碍服务未开启，点击授权去开启无障碍服务 - 大杨的双十一辅助");
-            isOpen = false;
-        }
-
+        mTvDesp.setText("执行成功 --- " + eventStub.getOpen());
     }
 
     private Intent intent2;
@@ -78,10 +73,7 @@ public class MainActivity extends AppCompatActivity {
                 startActivity(intent);
                 break;
             case R.id.btn_start:
-                if (!isOpen) {
-                    Toast.makeText(this, "先开启无障碍权限", Toast.LENGTH_SHORT).show();
-                    return;
-                }
+
                 if (intent2 != null) {
                     stopService(intent2);
                 }
@@ -91,23 +83,17 @@ public class MainActivity extends AppCompatActivity {
                 mTvDesp.setText("正在执行“去完成”任务，打开任务列表即可");
                 break;
             case R.id.btn_start2:
-                if (!isOpen) {
-                    Toast.makeText(this, "先开启无障碍权限", Toast.LENGTH_SHORT).show();
-                    return;
-                }
                 if (intent2 != null) {
                     stopService(intent2);
                 }
-                intent2 = new Intent(this, MyAccessibilityService.class);
+                intent2 = new Intent(this,MyAccessibilityService.class);
                 intent2.putExtra("key", "去浏览");
                 startService(intent2);
+
                 mTvDesp.setText("正在执行“去浏览”任务，打开任务列表即可");
                 break;
             case R.id.btn_close:
-                if (!isOpen) {
-                    Toast.makeText(this, "先开启无障碍权限", Toast.LENGTH_SHORT).show();
-                    return;
-                }
+
                 if (intent2 != null) {
                     stopService(intent2);
                 }
@@ -117,7 +103,8 @@ public class MainActivity extends AppCompatActivity {
                 mTvDesp.setText("正在执行“去搜索”任务，打开任务列表即可");
                 break;
             case R.id.tv_alipay:
-                goToAliPayTransferMoneyPerson(this, "6.66", "好活~当赏~", "2088612672749295");
+            //    goToAliPayTransferMoneyPerson(this, "6.66", "好活~当赏~", "2088612672749295");
+                MyUtils.goToAliPayTransferMoney(this,"fkx175670dgp1a3jcsqilb4");
                 break;
             case R.id.tv_qq:
                 chatWithQQ(this, 664846453 + "");

@@ -3,6 +3,7 @@ package com.example.autoclick;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
@@ -63,63 +64,65 @@ public class MyUtils {
     }
 
     /*weike  https://qr.alipay.com/fkx149768bnfyszttvbx068
-    * diandu   https://qr.alipay.com/fkx18795b6hgoxumuugw8b6
-    * 2  https://qr.alipay.com/fkx14495qnnpmgo1y29rx49
-    *
-    * */
+     * diandu   https://qr.alipay.com/fkx18795b6hgoxumuugw8b6
+     * 2  https://qr.alipay.com/fkx14495qnnpmgo1y29rx49
+     *
+     * */
 
     //普通转账界面 可以自动填写金额和备注 但是可以修改
-    public  static void goToAliPayTransferMoneyPerson(Context context,String money,String remarks,String userID){
-        String uri="alipays://platformapi/startapp?appId=09999988&actionType=toAccount&goBack=NO&amount="+money+"&userId="+userID+"&memo="+remarks;
+    public static void goToAliPayTransferMoneyPerson(Context context, String money, String remarks, String userID) {
+        String uri = "alipays://platformapi/startapp?appId=09999988&actionType=toAccount&goBack=NO&amount=" + money + "&userId=" + userID + "&memo=" + remarks;
         Intent intent = null;
         try {
-            intent = Intent.parseUri(uri, Intent.URI_INTENT_SCHEME );
-            context. startActivity(intent);
+            intent = Intent.parseUri(uri, Intent.URI_INTENT_SCHEME);
+            context.startActivity(intent);
         } catch (Exception e) {
             Toast.makeText(context, "支付宝未安装或版本不支持", Toast.LENGTH_SHORT).show();
             e.printStackTrace();
         }
     }
+
     //UserID要具有商家收款才行 不然跳转提醒有风险 金额和备注不可修改 类似于集成 但是没有回调
-    public static void goToAliPayTransferMoneyShop(Context context,String userID,int number,String remark){
-        String uri="alipays://platformapi/startapp?appId=20000123&" +
-                "actionType=scan\"+\"&biz_data={\"s\": \"money\",\"u\": \""+userID+"\",\"a\": \""+number+"\",\"m\": \""+remark+"\"}";
+    public static void goToAliPayTransferMoneyShop(Context context, String userID, int number, String remark) {
+        String uri = "alipays://platformapi/startapp?appId=20000123&" +
+                "actionType=scan\"+\"&biz_data={\"s\": \"money\",\"u\": \"" + userID + "\",\"a\": \"" + number + "\",\"m\": \"" + remark + "\"}";
         Intent intent = null;
         try {
-            intent = Intent.parseUri(uri, Intent.URI_INTENT_SCHEME );
-            context. startActivity(intent);
+            intent = Intent.parseUri(uri, Intent.URI_INTENT_SCHEME);
+            context.startActivity(intent);
         } catch (Exception e) {
             Toast.makeText(context, "支付宝未安装或版本不支持", Toast.LENGTH_SHORT).show();
             e.printStackTrace();
         }
     }
+
     //相当于直接扫描了二维码。
     public static void goToAliPayTransferMoney(Context context) {
-        String uri="alipayqr://platformapi/startapp?saId=10000007&clientVersion=3.7.0.0718&qrcode=https://qr.alipay.com/fkx149768bnfyszttvbx068";
+        String uri = "alipayqr://platformapi/startapp?saId=10000007&clientVersion=10.2.6&qrcode=https://qr.alipay.com/fkx149768bnfyszttvbx068";
         Intent intent = null;
         try {
-            intent = Intent.parseUri(uri, Intent.URI_INTENT_SCHEME );
-            context. startActivity(intent);
+            intent = Intent.parseUri(uri, Intent.URI_INTENT_SCHEME);
+            context.startActivity(intent);
         } catch (Exception e) {
             Toast.makeText(context, "支付宝未安装或版本不支持", Toast.LENGTH_SHORT).show();
             e.printStackTrace();
         }
     }
-    public static void goToAliPayTransferMoney(Context context,String QRCode){
+
+    public static void goToAliPayTransferMoney(Context context, String QRCode) {
         //转账界面
         //QR 收款码扫描二维码最后一段
-        String url="intent://platformapi/startapp?saId=10000007&" +
-"clientVersion=3.7.0.0718&qrcode=https%3A%2F%2Fqr.alipay.com%2F"+QRCode+"%3F_s" +
-"%3Dweb-other&_t=1472443966571#Intent;scheme=alipayqr;package=com.eg.android.AlipayGphone;end";
+        String url = "intent://platformapi/startapp?saId=10000007&" +
+                "clientVersion=3.7.0.0718&qrcode=https%3A%2F%2Fqr.alipay.com%2F" + QRCode + "%3F_s" +
+                "%3Dweb-other&_t=1472443966571#Intent;scheme=alipayqr;package=com.eg.android.AlipayGphone;end";
         Intent intent = null;
         try {
-            intent = Intent.parseUri(url, Intent.URI_INTENT_SCHEME );
-            context. startActivity(intent);
+            intent = Intent.parseUri(url, Intent.URI_INTENT_SCHEME);
+            context.startActivity(intent);
         } catch (Exception e) {
             Toast.makeText(context, "支付宝未安装或版本不支持", Toast.LENGTH_SHORT).show();
             e.printStackTrace();
         }
-
 
 
     }
@@ -137,7 +140,7 @@ public class MyUtils {
         intent.putExtra("Kdescription", text);
         try {
             context.startActivity(intent);
-        }catch (Exception e){
+        } catch (Exception e) {
             Toast.makeText(context, "微信未安装或版本不支持", Toast.LENGTH_SHORT).show();
         }
     }
@@ -175,7 +178,7 @@ public class MyUtils {
         intent.putExtra(Intent.EXTRA_TEXT, description);
         try {
             context.startActivity(intent);
-        }catch (Exception e){
+        } catch (Exception e) {
             Toast.makeText(context, "微信未安装或版本不支持", Toast.LENGTH_SHORT).show();
         }
     }
@@ -192,7 +195,7 @@ public class MyUtils {
         intent.putExtra(Intent.EXTRA_TEXT, description);
         try {
             context.startActivity(intent);
-        }catch (Exception e){
+        } catch (Exception e) {
             Toast.makeText(context, "手机QQ未安装或版本不支持", Toast.LENGTH_SHORT).show();
         }
 
@@ -209,19 +212,19 @@ public class MyUtils {
         intent.putExtra(Intent.EXTRA_STREAM, image);
         try {
             context.startActivity(intent);
-        }catch (Exception e){
+        } catch (Exception e) {
             Toast.makeText(context, "QQ空间未安装或版本不支持", Toast.LENGTH_SHORT).show();
         }
     }
 
     public static void joinQQGroup(Context context, String groupNumber) {
 
-         String uri="mqqapi://card/show_pslcard?src_type=internal&version=1&uin="+groupNumber+"&card_type=group&source=qrcode";
+        String uri = "mqqapi://card/show_pslcard?src_type=internal&version=1&uin=" + groupNumber + "&card_type=group&source=qrcode";
 
         // 此Flag可根据具体产品需要自定义，如设置，则在加群界面按返回，返回手Q主界面，不设置，按返回会返回到呼起产品界面
         // intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
         try {
-            context.startActivity(new Intent(Intent.ACTION_VIEW,Uri.parse(uri)));
+            context.startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(uri)));
 
         } catch (Exception e) {
             Toast.makeText(context, "未安装手Q或安装的版本不支持", Toast.LENGTH_SHORT).show();
@@ -231,14 +234,13 @@ public class MyUtils {
     }
 
 
-
-    public static void chatWithQQ(final Context context, String qq){
-            try {
-                String url = "mqqwpa://im/chat?chat_type=wpa&uin=" + qq;
-                context.startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(url)));
-            } catch (Exception e) {
-                Toast.makeText(context, "手机QQ未安装或该版本不支持", Toast.LENGTH_SHORT).show();
-            }
+    public static void chatWithQQ(final Context context, String qq) {
+        try {
+            String url = "mqqwpa://im/chat?chat_type=wpa&uin=" + qq;
+            context.startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(url)));
+        } catch (Exception e) {
+            Toast.makeText(context, "手机QQ未安装或该版本不支持", Toast.LENGTH_SHORT).show();
+        }
 
     }
 
@@ -272,6 +274,17 @@ public class MyUtils {
 
     }
 
+    public static boolean showed(Context context, String key) {
+        SharedPreferences sharedPreferences = context.getSharedPreferences(context.getPackageName(), Context.MODE_PRIVATE);
+        return sharedPreferences.getBoolean(key, false);
+    }
+
+    public static void setCache(Context context, String key, boolean msg) {
+        SharedPreferences sharedPreferences = context.getSharedPreferences(context.getPackageName(), Context.MODE_PRIVATE);
+        SharedPreferences.Editor editor = sharedPreferences.edit();
+        editor.putBoolean(key, msg);
+        editor.apply();
+    }
 
 
 }
