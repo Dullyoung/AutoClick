@@ -9,5 +9,6 @@
     android:canRequestFilterKeyEvents="true"
     android:canRequestEnhancedWebAccessibility="true"
     android:notificationTimeout="100"
+    android:description="@string/description"
 
     android:packageNames="com.taobao.taobao"/>
