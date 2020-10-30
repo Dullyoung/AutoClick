@@ -68,7 +68,9 @@ public class MainActivity extends AppCompatActivity {
     private Intent intent2;
 
 
-    @OnClick({R.id.btn_permission, R.id.btn_start, R.id.btn_start2, R.id.btn_close, R.id.tv_alipay, R.id.tv_qq})
+    @OnClick({R.id.btn_permission, R.id.btn_start,
+            R.id.btn_start2, R.id.btn_close, R.id.tv_alipay,
+            R.id.tv_qq,R.id.btn_start3})
     public void onViewClicked(View view) {
         switch (view.getId()) {
             case R.id.btn_permission:
@@ -104,6 +106,15 @@ public class MainActivity extends AppCompatActivity {
                 intent2.putExtra("key", "去搜索");
                 startService(intent2);
                 mTvDesp.setText("正在执行“去搜索”任务，打开任务列表即可");
+                break;
+                case R.id.btn_start3:
+                if (intent2 != null) {
+                    stopService(intent2);
+                }
+                intent2 = new Intent(this, MyAccessibilityService2.class);
+                intent2.putExtra("key", "逛一逛");
+                startService(intent2);
+                mTvDesp.setText("正在执行“逛一逛”任务，打开任务列表即可");
                 break;
             case R.id.tv_alipay:
             //    goToAliPayTransferMoneyPerson(this, "6.66", "好活~当赏~", "2088612672749295");

@@ -28,7 +28,7 @@ import java.math.RoundingMode;
 import java.util.Random;
 
 
-public class MyAccessibilityService extends AccessibilityService {
+public class MyAccessibilityService2 extends AccessibilityService {
     private static final String TAG = "aaaa";
 
     @Override
