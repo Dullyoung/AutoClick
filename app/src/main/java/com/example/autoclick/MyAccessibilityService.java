@@ -41,6 +41,7 @@ public class MyAccessibilityService extends AccessibilityService {
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
+        stop = false;
         if (intent != null) {
             keyword = intent.getStringExtra("key");
             Log.i(TAG, "onStartCommand: " + keyword);
@@ -54,9 +55,15 @@ public class MyAccessibilityService extends AccessibilityService {
 
 
     private void checkStateTime() {
-        Log.i("state", "已经停止了: " + stateTime);
-        if (stateTime > 6) {
+        if (stop) {
+            return;
+        }
+        Log.i("stateTime", "已经停止了: " + stateTime);
+        if (stateTime > 10) {
             MyGesture();
+            Toast.makeText(this, "超过十秒未检测到淘宝界面刷新，不用记得关闭无障碍", Toast.LENGTH_LONG).show();
+            Toast.makeText(this, "超过十秒未检测到淘宝界面刷新，不用记得关闭无障碍", Toast.LENGTH_LONG).show();
+            stateTime = 0;
         }
         MyPost.postDelayed(1000, () -> {
             stateTime++;
@@ -75,16 +82,8 @@ public class MyAccessibilityService extends AccessibilityService {
             return;
         }
 
-//
-//            for (AccessibilityWindowInfo accessibilityWindowInfo : getWindows()) {
-//
-//                if (accessibilityWindowInfo.getRoot().getPackageName().equals("com.taobao.taobao")) {
-//                    rootInfo = accessibilityWindowInfo.getRoot();
-//                }
-//
         rootInfo = event.getSource();
         //拿到根节点
-//开始找目标节点，这里拎出来细讲，直接往下看正文
         if (rootInfo != null && rootInfo.getChildCount() != 0) {
             MyTask(rootInfo);
             Log.i(TAG, "开始执行任务");
@@ -112,23 +111,22 @@ public class MyAccessibilityService extends AccessibilityService {
             return;
         }
         Log.i(TAG, "findByText: 开始查找字段````````" + keyword);
-        //开始去找
-        // findByID(rootInfo, "com.tencent.mobileqq:id/chat_item_content_layout");
-//        if (findByText(rootInfo, keyword) != null) {
-//            Log.i(TAG, "MyTask: " + rootInfo);
-//        }
+
         get(rootInfo);
 
     }
 
+
+    private boolean stop = false;
+
     @Override
     public boolean onUnbind(Intent intent) {
+        stop = true;
         Toast.makeText(this, "停止运行", Toast.LENGTH_SHORT).show();
         EventBus.getDefault().post(new EventStub("停止运行"));
         return super.onUnbind(intent);
     }
 
-    private AccessibilityNodeInfo back;
 
     private long clickBackTime;
 
@@ -212,6 +210,7 @@ public class MyAccessibilityService extends AccessibilityService {
                         info.getContentDescription().toString().contains("任务完成")
                                 || info.getContentDescription().toString().contains("任务已经")
                                 || info.getContentDescription().toString().contains("全部完成啦")
+                                || info.getContentDescription().toString().contains("继续退出")
                                 || info.getContentDescription().toString().contains("任务已完成"))) {
                     MyPost.postDelayed(1000, () -> {
                         back(info);
@@ -224,6 +223,7 @@ public class MyAccessibilityService extends AccessibilityService {
                         info.getText().toString().contains("任务完成")
                                 || info.getText().toString().contains("任务已经")
                                 || info.getText().toString().contains("全部完成啦")
+                                || info.getText().toString().contains("继续退出")
                                 || info.getText().toString().contains("任务已完成"))) {
                     MyPost.postDelayed(1000, () -> {
                         back(info);
