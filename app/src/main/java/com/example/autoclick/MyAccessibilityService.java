@@ -45,14 +45,30 @@ public class MyAccessibilityService extends AccessibilityService {
             keyword = intent.getStringExtra("key");
             Log.i(TAG, "onStartCommand: " + keyword);
         }
+        checkStateTime();
         return super.onStartCommand(intent, flags, startId);
     }
 
     private String keyword = "";
     AccessibilityNodeInfo rootInfo = null;
 
+
+    private void checkStateTime() {
+        Log.i("state", "已经停止了: " + stateTime);
+        if (stateTime > 6) {
+            MyGesture();
+        }
+        MyPost.postDelayed(1000, () -> {
+            stateTime++;
+            checkStateTime();
+        });
+    }
+
+    private int stateTime = 0;
+
     @Override
     public void onAccessibilityEvent(AccessibilityEvent event) {
+        stateTime = 0;
         if (keyword.equals("")) {
             Log.i(TAG, "关键词为空 不执行: ");
             //  Toast.makeText(this, "为获取到关键字，返回重试", Toast.LENGTH_SHORT).show();
@@ -135,7 +151,7 @@ public class MyAccessibilityService extends AccessibilityService {
             //100L 第一个是开始的时间，第二个是持续时间
             dispatchGesture(description, new MyCallBack(), null);
             if (!isBackClicked && System.currentTimeMillis() - scrollTime > 5000) {
-              //  MyGesture();
+                //  MyGesture();
                 isBackClicked = true;
                 scrollTime = System.currentTimeMillis();
                 Log.i("MyGesture", "MyGesture: x1:" + x1 + "`y1:" + y1 + "`x2:" + x2 + "`y2:" + y2);
@@ -266,7 +282,7 @@ public class MyAccessibilityService extends AccessibilityService {
             Log.i("click", "点击: " + targetInfo.getText() + "````" + targetInfo.getClassName());
             targetInfo.performAction(AccessibilityNodeInfo.ACTION_CLICK);
             clickTime = System.currentTimeMillis();
-          // MyPost.postDelayed(5000, this::MyGesture);
+            // MyPost.postDelayed(5000, this::MyGesture);
             isBackClicked = false;
         }
 
