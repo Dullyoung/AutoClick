@@ -97,6 +97,7 @@ public class MyAccessibilityService extends AccessibilityService {
     @Override
     public void onDestroy() {
         super.onDestroy();
+        stop = true;
         Log.i(TAG, "onDestroy: ");
         EventBus.getDefault().post(new EventStub("停止"));
     }
