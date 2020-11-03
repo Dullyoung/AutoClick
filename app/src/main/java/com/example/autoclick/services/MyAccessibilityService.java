@@ -51,10 +51,9 @@ public class MyAccessibilityService extends AccessibilityService {
         if (stop) {
             return;
         }
-        Log.i("stateTime", "已经停止了: " + (System.currentTimeMillis() - stateTime) / 1000);
+        Log.i("stateTime", "在任务列表页？" + isBackClicked + "已经停止了: " + (System.currentTimeMillis() - stateTime) / 1000);
         if (System.currentTimeMillis() - stateTime > 10000) {
             MyGesture();
-            Toast.makeText(this, "超过十秒未检测到指定内容，不用要关闭无障碍", Toast.LENGTH_LONG).show();
             stateTime = System.currentTimeMillis();
         }
         MyPost.postDelayed(1000, this::checkStateTime);
@@ -65,7 +64,7 @@ public class MyAccessibilityService extends AccessibilityService {
     @Override
     public void onAccessibilityEvent(AccessibilityEvent event) {
         stop = false;
-        stateTime = System.currentTimeMillis();
+
         if (keyword.equals("")) {
             Log.i(TAG, "关键词为空 不执行: ");
             //  Toast.makeText(this, "为获取到关键字，返回重试", Toast.LENGTH_SHORT).show();
@@ -121,7 +120,6 @@ public class MyAccessibilityService extends AccessibilityService {
 
     private long clickBackTime;
 
-    private boolean done = false;
 
     private void MyGesture() {//仿滑动
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.N) {
@@ -130,16 +128,13 @@ public class MyAccessibilityService extends AccessibilityService {
             int x2 = new Random(System.currentTimeMillis()).nextInt(100) + 500;
             int y1 = new Random(System.currentTimeMillis()).nextInt(100) + 1000;
             int y2 = new Random(System.currentTimeMillis()).nextInt(100) + 500;
-            if (done) {
-                done = false;
+            if (isBackClicked) {
+                path.lineTo(x1, y1);  //滑动终点
+                path.moveTo(x2, y2 - 400);//滑动起点
+            } else {
                 path.moveTo(x1, y1);   //滑动起点
                 path.lineTo(x2, y2);//滑动终点
-            } else {
-                done = true;
-                path.lineTo(x1, y1);  //滑动终点
-                path.moveTo(x2, y2);//滑动起点
             }
-
             GestureDescription.Builder builder = new GestureDescription.Builder();
             long startTime = new Random(System.currentTimeMillis()).nextInt(100) + 200;
             long duration = new Random(System.currentTimeMillis()).nextInt(100) + 500;
@@ -149,7 +144,6 @@ public class MyAccessibilityService extends AccessibilityService {
             dispatchGesture(description, new MyCallBack(), null);
             if (!isBackClicked && System.currentTimeMillis() - scrollTime > 5000) {
                 //  MyGesture();
-                isBackClicked = true;
                 scrollTime = System.currentTimeMillis();
                 Log.i("MyGesture", "MyGesture: x1:" + x1 + "`y1:" + y1 + "`x2:" + x2 + "`y2:" + y2);
                 Log.i("MyGesture", "MyGesture:startTime " + startTime + "duration:" + duration);
@@ -189,14 +183,13 @@ public class MyAccessibilityService extends AccessibilityService {
             isBackClicked = true;
             clickBackTime = System.currentTimeMillis();
             Log.i("performBack", "back: ");
-
+            stateTime = System.currentTimeMillis();
 
         }
     }
 
 
     private AccessibilityNodeInfo get(AccessibilityNodeInfo rootInfo) {
-        isBackClicked = false;
         if (rootInfo.getChildCount() > 0) {
             for (int i = 0; i < rootInfo.getChildCount(); i++) {
                 AccessibilityNodeInfo info = rootInfo.getChild(i);
@@ -236,6 +229,8 @@ public class MyAccessibilityService extends AccessibilityService {
                         MyPost.postDelayed(2000, () -> {
                             Log.i("success", "找到节点 点击 " + keyword);
                             performClick(getClickable(info));
+                            stateTime = System.currentTimeMillis();
+                            isBackClicked = false;
                         });
                     }
                 }
