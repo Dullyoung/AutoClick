@@ -1,4 +1,4 @@
-package com.example.autoclick;
+package com.example.autoclick.Utils;
 
 import android.os.Handler;
 import android.os.Looper;

@@ -1,34 +1,27 @@
-package com.example.autoclick;
+package com.example.autoclick.services;
 
 import android.accessibilityservice.AccessibilityService;
 import android.accessibilityservice.GestureDescription;
-import android.app.Service;
 import android.content.Intent;
-import android.content.ServiceConnection;
 import android.graphics.Path;
-import android.graphics.Rect;
 import android.os.Build;
-import android.os.Bundle;
-import android.os.IBinder;
 import android.text.TextUtils;
 import android.util.Log;
 import android.view.accessibility.AccessibilityEvent;
 import android.view.accessibility.AccessibilityNodeInfo;
-import android.view.accessibility.AccessibilityWindowInfo;
-import android.widget.ArrayAdapter;
-import android.widget.AutoCompleteTextView;
-import android.widget.Button;
 import android.widget.Toast;
 
 import androidx.annotation.RequiresApi;
 
+import com.example.autoclick.Utils.MyPost;
+import com.example.autoclick.model.bean.EventStub;
+
 import org.greenrobot.eventbus.EventBus;
 
-import java.math.RoundingMode;
 import java.util.Random;
 
 
-public class MyAccessibilityService extends AccessibilityService {
+public class MyAccessibilityService2 extends AccessibilityService {
     private static final String TAG = "aaaa";
 
     @Override
@@ -97,7 +90,6 @@ public class MyAccessibilityService extends AccessibilityService {
     @Override
     public void onDestroy() {
         super.onDestroy();
-        stop = true;
         Log.i(TAG, "onDestroy: ");
         EventBus.getDefault().post(new EventStub("停止"));
     }

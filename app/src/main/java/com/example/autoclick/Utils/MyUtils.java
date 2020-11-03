@@ -1,4 +1,4 @@
-package com.example.autoclick;
+package com.example.autoclick.Utils;
 
 import android.content.ComponentName;
 import android.content.Context;
@@ -10,6 +10,7 @@ import android.content.pm.ResolveInfo;
 import android.graphics.Bitmap;
 import android.net.Uri;
 import android.os.Build;
+import android.text.TextUtils;
 import android.widget.AutoCompleteTextView;
 import android.widget.Toast;
 
@@ -23,6 +24,18 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class MyUtils {
+
+
+    public static void startBrowser(Context context, String url) {
+        if (TextUtils.isEmpty(url)) {
+            return;
+        }
+        Intent intent = new Intent();
+        intent.setAction("android.intent.action.VIEW");
+        Uri content_url = Uri.parse(url);
+        intent.setData(content_url);
+        context.startActivity(intent);
+    }
     public static void startAppWithPackageName(Context context, String packageName) {
 
         // 通过包名获取此APP详细信息，包括Activities、services、versioncode、name等等

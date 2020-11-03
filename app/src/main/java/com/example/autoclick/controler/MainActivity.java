@@ -1,20 +1,28 @@
-package com.example.autoclick;
+package com.example.autoclick.controler;
 
-import android.app.Service;
-import android.content.ComponentName;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
-import android.content.ServiceConnection;
 import android.net.Uri;
 import android.os.Bundle;
-import android.os.IBinder;
 import android.provider.Settings;
 import android.util.Log;
 import android.view.View;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
+
+import com.alibaba.fastjson.JSONObject;
+import com.alibaba.fastjson.TypeReference;
+import com.example.autoclick.model.bean.EventStub;
+import com.example.autoclick.services.MyAccessibilityService;
+import com.example.autoclick.Utils.MyUtils;
+import com.example.autoclick.R;
+import com.example.autoclick.model.bean.UpdateInfo;
+import com.example.autoclick.model.engine.UpdataEngine;
+import com.zhy.http.okhttp.callback.Callback;
 
 import org.greenrobot.eventbus.EventBus;
 import org.greenrobot.eventbus.Subscribe;
@@ -23,6 +31,8 @@ import org.greenrobot.eventbus.ThreadMode;
 import butterknife.BindView;
 import butterknife.ButterKnife;
 import butterknife.OnClick;
+import okhttp3.Call;
+import okhttp3.Response;
 
 
 public class MainActivity extends AppCompatActivity {
@@ -45,10 +55,10 @@ public class MainActivity extends AppCompatActivity {
         if (!EventBus.getDefault().isRegistered(this)) {
             EventBus.getDefault().register(this);
         }
-
+        mLoadingDialog = new LoadingDialog(this);
     }
 
-
+    LoadingDialog mLoadingDialog;
 
 
     @Override
@@ -70,7 +80,7 @@ public class MainActivity extends AppCompatActivity {
 
     @OnClick({R.id.btn_permission, R.id.btn_start,
             R.id.btn_start2, R.id.btn_close, R.id.tv_alipay,
-            R.id.tv_qq,R.id.btn_start3})
+            R.id.tv_qq, R.id.btn_start3})
     public void onViewClicked(View view) {
         switch (view.getId()) {
             case R.id.btn_permission:
@@ -91,7 +101,7 @@ public class MainActivity extends AppCompatActivity {
                 if (intent2 != null) {
                     stopService(intent2);
                 }
-                intent2 = new Intent(this,MyAccessibilityService.class);
+                intent2 = new Intent(this, MyAccessibilityService.class);
                 intent2.putExtra("key", "去浏览");
                 startService(intent2);
 
@@ -107,18 +117,46 @@ public class MainActivity extends AppCompatActivity {
                 startService(intent2);
                 mTvDesp.setText("正在执行“去搜索”任务，打开任务列表即可");
                 break;
-                case R.id.btn_start3:
-                if (intent2 != null) {
-                    stopService(intent2);
-                }
-                intent2 = new Intent(this, MyAccessibilityService2.class);
-                intent2.putExtra("key", "逛一逛");
-                startService(intent2);
-                mTvDesp.setText("正在执行“逛一逛”任务，打开任务列表即可");
+            case R.id.btn_start3:
+                mLoadingDialog.show("获取中...");
+                UpdataEngine engine = new UpdataEngine();
+
+                engine.getInfo(new Callback() {
+                    @Override
+                    public Object parseNetworkResponse(Response response, int id) throws Exception {
+                        return response.body().string();
+                    }
+
+                    @Override
+                    public void onError(Call call, Exception e, int id) {
+                        Log.i("aaaa", "onError: " + e);
+                    }
+
+                    @Override
+                    public void onResponse(Object response, int id) {
+                        mLoadingDialog.dismiss();
+                        try {
+                            String responseString = response.toString();
+                            int start = responseString.lastIndexOf("###Info###");
+                            int end = responseString.indexOf("***Info***");
+                            String content = responseString.substring(start + 10, end);
+                            content = content.replace("\\", "");
+                            Log.i("aaaa", "返回数据: " + content);
+                            updateInfo = JSONObject.parseObject(content, new TypeReference<UpdateInfo>() {
+                            }.getType());
+                            success(updateInfo);
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                            Toast.makeText(MainActivity.this, "获取失败", Toast.LENGTH_SHORT).show();
+                        }
+
+                    }
+                });
+
                 break;
             case R.id.tv_alipay:
-            //    goToAliPayTransferMoneyPerson(this, "6.66", "好活~当赏~", "2088612672749295");
-                MyUtils.goToAliPayTransferMoney(this,"fkx175670dgp1a3jcsqilb4");
+                //    goToAliPayTransferMoneyPerson(this, "6.66", "好活~当赏~", "2088612672749295");
+                MyUtils.goToAliPayTransferMoney(this, "fkx175670dgp1a3jcsqilb4");
                 break;
             case R.id.tv_qq:
                 chatWithQQ(this, 664846453 + "");
@@ -126,6 +164,32 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    UpdateInfo updateInfo;
+
+    private void success(UpdateInfo updateInfo) {
+        if (updateInfo == null) {
+            return;
+        }
+        if (updateInfo.getVersion() > 20) {
+            String msg = updateInfo.getDesp() + "\n大小:" + updateInfo.getSize();
+            msg = msg.replace("\\n", "\n");
+            AlertDialog dialog = new AlertDialog.Builder(this)
+                    .setTitle("更新")
+                    .setMessage(msg)
+                    .setNegativeButton("不了", (dialog1, which) -> {
+                        dialog1.dismiss();
+                    })
+                    .setPositiveButton("去下载", ((dialog2, which) -> {
+                        MyUtils.startBrowser(this, updateInfo.getUrl());
+                    }))
+                    .create();
+            dialog.show();
+        } else {
+            Toast.makeText(this, "已是最新版本", Toast.LENGTH_SHORT).show();
+        }
+
+
+    }
 
     //普通转账界面 可以自动填写金额和备注 但是可以修改
     public static void goToAliPayTransferMoneyPerson(Context context, String money, String remarks, String userID) {

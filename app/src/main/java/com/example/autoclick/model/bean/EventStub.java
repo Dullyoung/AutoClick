@@ -1,4 +1,4 @@
-package com.example.autoclick;
+package com.example.autoclick.model.bean;
 
 /*
  *   Created by Dullyoung on 2020/10/28 0028

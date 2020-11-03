@@ -10,7 +10,7 @@
     <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        tools:context=".MainActivity">
+        tools:context=".controler.MainActivity">
 
         <TextView
             android:id="@+id/tv_state"
@@ -70,12 +70,12 @@
             app:layout_constraintTop_toBottomOf="@id/btn_start2" />
 
         <Button
-            android:visibility="gone"
+
             android:id="@+id/btn_start3"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="10dp"
-            android:text="支付宝逛一逛"
+            android:text="检查更新"
             app:layout_constraintStart_toStartOf="@id/btn_permission"
             app:layout_constraintTop_toBottomOf="@id/btn_close" />
 
