@@ -60,10 +60,23 @@ public class MainActivity extends AppCompatActivity {
 
     LoadingDialog mLoadingDialog;
 
+    long time;
+
+    @Override
+    public void onBackPressed() {
+
+        if (System.currentTimeMillis() - time > 1000) {
+            time = System.currentTimeMillis();
+            Toast.makeText(this, "再按一次退出", Toast.LENGTH_SHORT).show();
+        } else {
+           onDestroy();
+        }
+    }
 
     @Override
     protected void onDestroy() {
         super.onDestroy();
+        System.exit(0);
         if (EventBus.getDefault().isRegistered(this)) {
             EventBus.getDefault().unregister(this);
         }
