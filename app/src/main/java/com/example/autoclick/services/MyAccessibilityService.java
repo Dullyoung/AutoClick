@@ -121,6 +121,7 @@ public class MyAccessibilityService extends AccessibilityService {
 
     private long clickBackTime;
 
+    private boolean done = false;
 
     private void MyGesture() {//仿滑动
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.N) {
@@ -129,8 +130,15 @@ public class MyAccessibilityService extends AccessibilityService {
             int x2 = new Random(System.currentTimeMillis()).nextInt(100) + 500;
             int y1 = new Random(System.currentTimeMillis()).nextInt(100) + 1000;
             int y2 = new Random(System.currentTimeMillis()).nextInt(100) + 500;
-            path.moveTo(x1, y1);   //滑动起点
-            path.lineTo(x2, y2);//滑动终点
+            if (done) {
+                done = false;
+                path.moveTo(x1, y1);   //滑动起点
+                path.lineTo(x2, y2);//滑动终点
+            } else {
+                done = true;
+                path.lineTo(x1, y1);  //滑动终点
+                path.moveTo(x2, y2);//滑动起点
+            }
 
             GestureDescription.Builder builder = new GestureDescription.Builder();
             long startTime = new Random(System.currentTimeMillis()).nextInt(100) + 200;

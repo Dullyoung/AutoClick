@@ -51,7 +51,7 @@ public class MainActivity extends AppCompatActivity {
         mTvState.setText("说明：\n1.需要自己到手机相应位置设置允许后台运行权限，不然部分机型运行一分钟左右后台进程就被系统杀了。" +
                 "\n2.开启无障碍服务 - 大杨的双十一辅助" +
                 "\n3.点击方式是根据文字来的，三种任务自己选" +
-                "\n4.如果开了后台权限，用完了记得关闭无障碍，不然会一直运行");
+                "\n4.打开淘宝任务列表就可以了");
         if (!EventBus.getDefault().isRegistered(this)) {
             EventBus.getDefault().register(this);
         }
