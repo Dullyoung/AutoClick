@@ -52,7 +52,7 @@ public class MyAccessibilityService extends AccessibilityService {
             return;
         }
         Log.i("stateTime", "在任务列表页？" + isBackClicked + "已经停止了: " + (System.currentTimeMillis() - stateTime) / 1000);
-        if (System.currentTimeMillis() - stateTime > 10000) {
+        if (System.currentTimeMillis() - stateTime > (isBackClicked ? 5000 : 25000)) {
             MyGesture();
             stateTime = System.currentTimeMillis();
         }
@@ -128,13 +128,8 @@ public class MyAccessibilityService extends AccessibilityService {
             int x2 = new Random(System.currentTimeMillis()).nextInt(100) + 500;
             int y1 = new Random(System.currentTimeMillis()).nextInt(100) + 1000;
             int y2 = new Random(System.currentTimeMillis()).nextInt(100) + 500;
-            if (isBackClicked) {
-                path.lineTo(x1, y1);  //滑动终点
-                path.moveTo(x2, y2 - 400);//滑动起点
-            } else {
-                path.moveTo(x1, y1);   //滑动起点
-                path.lineTo(x2, y2);//滑动终点
-            }
+            path.moveTo(x1, y1);   //滑动起点
+            path.lineTo(x2, y2);//滑动终点
             GestureDescription.Builder builder = new GestureDescription.Builder();
             long startTime = new Random(System.currentTimeMillis()).nextInt(100) + 200;
             long duration = new Random(System.currentTimeMillis()).nextInt(100) + 500;
@@ -143,7 +138,6 @@ public class MyAccessibilityService extends AccessibilityService {
             //100L 第一个是开始的时间，第二个是持续时间
             dispatchGesture(description, new MyCallBack(), null);
             if (!isBackClicked && System.currentTimeMillis() - scrollTime > 5000) {
-                //  MyGesture();
                 scrollTime = System.currentTimeMillis();
                 Log.i("MyGesture", "MyGesture: x1:" + x1 + "`y1:" + y1 + "`x2:" + x2 + "`y2:" + y2);
                 Log.i("MyGesture", "MyGesture:startTime " + startTime + "duration:" + duration);
@@ -153,7 +147,7 @@ public class MyAccessibilityService extends AccessibilityService {
 
     private long scrollTime;
 
-    private boolean isBackClicked = false;
+    private boolean isBackClicked = true;
 
     //模拟手势的监听
     @RequiresApi(api = Build.VERSION_CODES.N)
