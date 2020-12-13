@@ -14,11 +14,14 @@ import android.widget.Toast;
 import androidx.annotation.RequiresApi;
 
 import com.example.autoclick.Utils.MyPost;
+import com.example.autoclick.controler.MainActivity;
 import com.example.autoclick.model.bean.EventStub;
 
 import org.greenrobot.eventbus.EventBus;
 
 import java.util.Random;
+
+import static android.content.Intent.FLAG_ACTIVITY_NEW_TASK;
 
 
 public class MyAccessibilityService extends AccessibilityService {
@@ -28,6 +31,12 @@ public class MyAccessibilityService extends AccessibilityService {
     protected void onServiceConnected() {
         super.onServiceConnected();
         Log.i(TAG, "无障碍服务已开启: ");
+        if (MainActivity.get() == null || MainActivity.get().get() == null || MainActivity.get().get().isDestroyed()) {
+            Toast.makeText(this, "MainActivity", Toast.LENGTH_SHORT).show();
+            Intent intent=new Intent(this,MainActivity.class);
+            intent.addFlags(FLAG_ACTIVITY_NEW_TASK);
+            startActivity(intent);
+        }
         Toast.makeText(this, "无障碍服务已开启,请返回软件启动", Toast.LENGTH_SHORT).show();
     }
 
@@ -40,7 +49,7 @@ public class MyAccessibilityService extends AccessibilityService {
             Log.i(TAG, "onStartCommand: " + keyword);
         }
         checkStateTime();
-        return super.onStartCommand(intent, flags, startId);
+        return START_STICKY;
     }
 
     private String keyword = "";

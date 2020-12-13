@@ -28,6 +28,8 @@ import org.greenrobot.eventbus.EventBus;
 import org.greenrobot.eventbus.Subscribe;
 import org.greenrobot.eventbus.ThreadMode;
 
+import java.lang.ref.WeakReference;
+
 import butterknife.BindView;
 import butterknife.ButterKnife;
 import butterknife.OnClick;
@@ -43,11 +45,18 @@ public class MainActivity extends AppCompatActivity {
     @BindView(R.id.tv_desp)
     TextView mTvDesp;
 
+    static WeakReference<MainActivity> mainActivity = null;
+
+    public static WeakReference<MainActivity> get() {
+        return mainActivity;
+    }
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         ButterKnife.bind(this);
+        mainActivity = new WeakReference<MainActivity>(this);
         mTvState.setText("说明：\n1.需要自己到手机相应位置设置允许后台运行权限，不然部分机型运行一分钟左右后台进程就被系统杀了。" +
                 "\n2.开启无障碍服务 - 大杨的双十一辅助" +
                 "\n3.点击方式是根据文字来的，三种任务自己选" +
@@ -69,7 +78,7 @@ public class MainActivity extends AppCompatActivity {
             time = System.currentTimeMillis();
             Toast.makeText(this, "再按一次退出", Toast.LENGTH_SHORT).show();
         } else {
-           onDestroy();
+            onDestroy();
         }
     }
 
