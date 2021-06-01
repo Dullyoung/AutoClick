@@ -16,9 +16,9 @@ import okhttp3.Call;
 import okhttp3.Response;
 
 public class UpdataEngine {
-    private String url = "https://share.weiyun.com/MHdTxl9h";
+    private String url = "http://www.piggyfamily.top:6666/update";
     public void getInfo(Callback callback) {
-        RequestCall requestCall = OkHttpUtils.get().url(url).build();
+        RequestCall requestCall = OkHttpUtils.post().url(url).build();
         requestCall.execute(callback);
     }
 }

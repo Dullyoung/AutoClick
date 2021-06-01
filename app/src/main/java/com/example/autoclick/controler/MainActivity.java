@@ -3,7 +3,9 @@ package com.example.autoclick.controler;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.pm.PackageInfo;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.provider.Settings;
 import android.util.Log;
@@ -16,13 +18,16 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import com.alibaba.fastjson.JSONObject;
 import com.alibaba.fastjson.TypeReference;
+import com.example.autoclick.App;
 import com.example.autoclick.model.bean.EventStub;
+import com.example.autoclick.model.bean.ResultInfo;
 import com.example.autoclick.services.MyAccessibilityService;
 import com.example.autoclick.Utils.MyUtils;
 import com.example.autoclick.R;
 import com.example.autoclick.model.bean.UpdateInfo;
 import com.example.autoclick.model.engine.UpdataEngine;
 import com.zhy.http.okhttp.callback.Callback;
+import com.zhy.http.okhttp.callback.StringCallback;
 
 import org.greenrobot.eventbus.EventBus;
 import org.greenrobot.eventbus.Subscribe;
@@ -58,7 +63,7 @@ public class MainActivity extends AppCompatActivity {
         ButterKnife.bind(this);
         mainActivity = new WeakReference<MainActivity>(this);
         mTvState.setText("说明：\n1.需要自己到手机相应位置设置允许后台运行权限，不然部分机型运行一分钟左右后台进程就被系统杀了。" +
-                "\n2.开启无障碍服务 - 大杨的双十一辅助" +
+                "\n2.开启无障碍服务 - 大杨的辅助-淘宝" +
                 "\n3.点击方式是根据文字来的，三种任务自己选" +
                 "\n4.打开淘宝任务列表就可以了");
         if (!EventBus.getDefault().isRegistered(this)) {
@@ -130,7 +135,6 @@ public class MainActivity extends AppCompatActivity {
                 mTvDesp.setText("正在执行“去浏览”任务，打开任务列表即可");
                 break;
             case R.id.btn_close:
-
                 if (intent2 != null) {
                     stopService(intent2);
                 }
@@ -143,33 +147,32 @@ public class MainActivity extends AppCompatActivity {
                 mLoadingDialog.show("获取中...");
                 UpdataEngine engine = new UpdataEngine();
 
-                engine.getInfo(new Callback() {
-                    @Override
-                    public Object parseNetworkResponse(Response response, int id) throws Exception {
-                        return response.body().string();
-                    }
-
+                engine.getInfo(new StringCallback() {
                     @Override
                     public void onError(Call call, Exception e, int id) {
-                        Log.i("aaaa", "onError: " + e);
+                        mLoadingDialog.dismiss();
+                        Toast.makeText(MainActivity.this, "请求失败" + e, Toast.LENGTH_SHORT).show();
                     }
 
                     @Override
-                    public void onResponse(Object response, int id) {
+                    public void onResponse(String response, int id) {
                         mLoadingDialog.dismiss();
+                        ResultInfo<UpdateInfo> resultInfo;
                         try {
-                            String responseString = response.toString();
-                            int start = responseString.lastIndexOf("###Info###");
-                            int end = responseString.indexOf("***Info***");
-                            String content = responseString.substring(start + 10, end);
-                            content = content.replace("\\", "");
-                            Log.i("aaaa", "返回数据: " + content);
-                            updateInfo = JSONObject.parseObject(content, new TypeReference<UpdateInfo>() {
+                            resultInfo = JSONObject.parseObject(response, new TypeReference<ResultInfo<UpdateInfo>>() {
                             }.getType());
-                            success(updateInfo);
                         } catch (Exception e) {
-                            e.printStackTrace();
-                            Toast.makeText(MainActivity.this, "获取失败", Toast.LENGTH_SHORT).show();
+                            runOnUiThread(() -> {
+                                Toast.makeText(MainActivity.this, "返回数据有误", Toast.LENGTH_SHORT).show();
+                            });
+                            return;
+                        }
+                        if (resultInfo != null) {
+                            if (resultInfo.getCode() == 1) {
+                                success(resultInfo.getData());
+                            } else {
+                                Toast.makeText(MainActivity.this, resultInfo.getMsg(), Toast.LENGTH_SHORT).show();
+                            }
                         }
 
                     }
@@ -186,13 +189,11 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    UpdateInfo updateInfo;
-
     private void success(UpdateInfo updateInfo) {
         if (updateInfo == null) {
             return;
         }
-        if (updateInfo.getVersion() > 20) {
+        if (updateInfo.getVersion() > getPackageInfo().versionCode) {
             String msg = updateInfo.getDesp() + "\n大小:" + updateInfo.getSize();
             msg = msg.replace("\\n", "\n");
             AlertDialog dialog = new AlertDialog.Builder(this)
@@ -210,8 +211,23 @@ public class MainActivity extends AppCompatActivity {
             Toast.makeText(this, "已是最新版本", Toast.LENGTH_SHORT).show();
         }
 
-
     }
+
+    public PackageInfo getPackageInfo() {
+        PackageInfo pInfo = null;
+        try {
+            pInfo = getPackageManager().getPackageInfo(getPackageName(), 0);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        if (pInfo == null) {
+            pInfo = new PackageInfo();
+            pInfo.versionCode = 1;
+            pInfo.versionName = "1.0.0";
+        }
+        return pInfo;
+    }
+
 
     //普通转账界面 可以自动填写金额和备注 但是可以修改
     public static void goToAliPayTransferMoneyPerson(Context context, String money, String remarks, String userID) {

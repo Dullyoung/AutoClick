@@ -2,7 +2,8 @@ package com.example.autoclick;
 
 import android.app.Application;
 
-import com.umeng.commonsdk.UMConfigure;
+import com.tencent.bugly.crashreport.CrashReport;
+
 
 public class App extends Application {
     @Override
@@ -12,8 +13,6 @@ public class App extends Application {
     }
 
     private void init() {
-        String appId = "5fa0b67b45b2b751a921f395";
-        UMConfigure.setLogEnabled(true);
-        UMConfigure.init(this, appId, "default", UMConfigure.DEVICE_TYPE_PHONE, null);
+        CrashReport.initCrashReport(getApplicationContext(), "9336cd040d", false);
     }
 }
