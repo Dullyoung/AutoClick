@@ -33,7 +33,7 @@ public class MyAccessibilityService extends AccessibilityService {
         Log.i(TAG, "无障碍服务已开启: ");
         if (MainActivity.get() == null || MainActivity.get().get() == null || MainActivity.get().get().isDestroyed()) {
             Toast.makeText(this, "MainActivity", Toast.LENGTH_SHORT).show();
-            Intent intent=new Intent(this,MainActivity.class);
+            Intent intent = new Intent(this, MainActivity.class);
             intent.addFlags(FLAG_ACTIVITY_NEW_TASK);
             startActivity(intent);
         }
@@ -209,7 +209,7 @@ public class MyAccessibilityService extends AccessibilityService {
                                 || info.getContentDescription().toString().contains("任务已完成"))) {
                     MyPost.postDelayed(1000, () -> {
                         back(info);
-                        Log.i("success", "完成 返回列表 ");
+                        Log.i("success", "完成 返回列表 " + info.getText() + "-desp-" + info.getContentDescription());
                     });
                 }
 
@@ -219,10 +219,11 @@ public class MyAccessibilityService extends AccessibilityService {
                                 || info.getText().toString().contains("任务已经")
                                 || info.getText().toString().contains("全部完成啦")
                                 || info.getText().toString().contains("继续退出")
+                                || info.getText().toString().contains("最多额外可得30000喵币 (10/10)")
                                 || info.getText().toString().contains("任务已完成"))) {
                     MyPost.postDelayed(1000, () -> {
                         back(info);
-                        Log.i("success", "完成 返回列表 ");
+                        Log.i("success", "完成 返回列表 " + info.getText() + "-desp-" + info.getContentDescription());
                     });
                 }
 
@@ -231,6 +232,17 @@ public class MyAccessibilityService extends AccessibilityService {
                     if (info.getText() != null && info.getText().toString().contains(keyword)) {
                         MyPost.postDelayed(2000, () -> {
                             Log.i("success", "找到节点 点击 " + keyword);
+                            performClick(getClickable(info));
+                            stateTime = System.currentTimeMillis();
+                            isBackClicked = false;
+                        });
+                    }
+                }
+
+                if (info.getClassName() != null && info.getClassName().toString().contains("android.view.View")) {
+                    if (info.getText() != null && info.getText().toString().contains("逛店最多")) {
+                        MyPost.postDelayed(2000, () -> {
+                            Log.i("success", "找到节点 点击 " + "逛店最多");
                             performClick(getClickable(info));
                             stateTime = System.currentTimeMillis();
                             isBackClicked = false;
@@ -265,6 +277,9 @@ public class MyAccessibilityService extends AccessibilityService {
 
     //有些节点不可点击 点击交给父级甚至父级的父级...来做的。
     private AccessibilityNodeInfo getClickable(AccessibilityNodeInfo info) {
+        if (info == null) {
+            return null;
+        }
         Log.i(TAG, info.getClassName() + ": " + info.isClickable());
         if (info.isClickable()) {
             return info;
@@ -280,7 +295,7 @@ public class MyAccessibilityService extends AccessibilityService {
     private long clickTime;
 
     private void performClick(AccessibilityNodeInfo targetInfo) {
-
+        if (targetInfo == null) return;
         if (System.currentTimeMillis() - clickTime > 3000) {
             Log.i("click", "点击: " + targetInfo.getText() + "````" + targetInfo.getClassName());
             targetInfo.performAction(AccessibilityNodeInfo.ACTION_CLICK);
