@@ -1,5 +1,6 @@
 package com.example.autoclick.Utils;
 
+import android.app.ActivityManager;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
@@ -14,6 +15,7 @@ import android.text.TextUtils;
 import android.widget.AutoCompleteTextView;
 import android.widget.Toast;
 
+import androidx.annotation.NonNull;
 import androidx.core.content.FileProvider;
 
 import java.io.File;
@@ -23,8 +25,23 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+import butterknife.internal.Utils;
+
 public class MyUtils {
 
+    public static boolean isServiceRunning(Context context, String className) {
+        try {
+            ActivityManager am = (ActivityManager) context.getSystemService(Context.ACTIVITY_SERVICE);
+            List<ActivityManager.RunningServiceInfo> info = am.getRunningServices(0x7FFFFFFF);
+            if (info == null || info.size() == 0) return false;
+            for (ActivityManager.RunningServiceInfo aInfo : info) {
+                if (className.equals(aInfo.service.getClassName())) return true;
+            }
+            return false;
+        } catch (Exception ignore) {
+            return false;
+        }
+    }
 
     public static void startBrowser(Context context, String url) {
         if (TextUtils.isEmpty(url)) {
@@ -36,6 +53,7 @@ public class MyUtils {
         intent.setData(content_url);
         context.startActivity(intent);
     }
+
     public static void startAppWithPackageName(Context context, String packageName) {
 
         // 通过包名获取此APP详细信息，包括Activities、services、versioncode、name等等

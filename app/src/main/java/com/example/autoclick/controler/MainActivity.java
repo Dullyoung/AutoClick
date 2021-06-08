@@ -1,15 +1,15 @@
 package com.example.autoclick.controler;
 
+import android.accessibilityservice.AccessibilityService;
 import android.content.Context;
-import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageInfo;
 import android.net.Uri;
-import android.os.Build;
 import android.os.Bundle;
 import android.provider.Settings;
 import android.util.Log;
 import android.view.View;
+import android.widget.Switch;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -18,15 +18,13 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import com.alibaba.fastjson.JSONObject;
 import com.alibaba.fastjson.TypeReference;
-import com.example.autoclick.App;
+import com.example.autoclick.R;
+import com.example.autoclick.Utils.MyUtils;
 import com.example.autoclick.model.bean.EventStub;
 import com.example.autoclick.model.bean.ResultInfo;
-import com.example.autoclick.services.MyAccessibilityService;
-import com.example.autoclick.Utils.MyUtils;
-import com.example.autoclick.R;
 import com.example.autoclick.model.bean.UpdateInfo;
 import com.example.autoclick.model.engine.UpdataEngine;
-import com.zhy.http.okhttp.callback.Callback;
+import com.example.autoclick.services.MyAccessibilityService;
 import com.zhy.http.okhttp.callback.StringCallback;
 
 import org.greenrobot.eventbus.EventBus;
@@ -39,7 +37,6 @@ import butterknife.BindView;
 import butterknife.ButterKnife;
 import butterknife.OnClick;
 import okhttp3.Call;
-import okhttp3.Response;
 
 
 public class MainActivity extends AppCompatActivity {
@@ -51,6 +48,8 @@ public class MainActivity extends AppCompatActivity {
     TextView mTvDesp;
 
     static WeakReference<MainActivity> mainActivity = null;
+    @BindView(R.id.s_oneKey)
+    Switch mSOneKey;
 
     public static WeakReference<MainActivity> get() {
         return mainActivity;
@@ -62,29 +61,35 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
         ButterKnife.bind(this);
         mainActivity = new WeakReference<MainActivity>(this);
-        mTvState.setText("说明：\n1.需要自己到手机相应位置设置允许后台运行权限，不然部分机型运行一分钟左右后台进程就被系统杀了。" +
+        mTvState.setText("说明：\n1.需要自己设置允许后台运行权限，不然部分机型运行一分钟左右后台进程就被系统杀了。" +
                 "\n2.开启无障碍服务 - 大杨的辅助-淘宝" +
                 "\n3.点击方式是根据文字来的，三种任务自己选" +
                 "\n4.打开淘宝任务列表就可以了");
         if (!EventBus.getDefault().isRegistered(this)) {
             EventBus.getDefault().register(this);
         }
+        getWindow().setStatusBarColor(0xff000000);
+        checkUpdate();
         mLoadingDialog = new LoadingDialog(this);
+        mSOneKey.setOnCheckedChangeListener((buttonView, isChecked) -> {
+            if (!buttonView.isPressed()) {
+                return;
+            }
+            isOnKeyMode = isChecked;
+            if (isChecked) {
+                Toast.makeText(this, "一键匹配已开启", Toast.LENGTH_SHORT).show();
+            }
+        });
     }
 
     LoadingDialog mLoadingDialog;
 
-    long time;
-
     @Override
     public void onBackPressed() {
-
-        if (System.currentTimeMillis() - time > 1000) {
-            time = System.currentTimeMillis();
-            Toast.makeText(this, "再按一次退出", Toast.LENGTH_SHORT).show();
-        } else {
-            onDestroy();
-        }
+        Intent home = new Intent(Intent.ACTION_MAIN);
+        home.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+        home.addCategory(Intent.CATEGORY_HOME);
+        startActivity(home);
     }
 
     @Override
@@ -95,19 +100,16 @@ public class MainActivity extends AppCompatActivity {
             EventBus.getDefault().unregister(this);
         }
     }
-
+    public static boolean isOnKeyMode = false;
 
     @Subscribe(threadMode = ThreadMode.MAIN)
     public void onMsg(EventStub eventStub) {
         mTvDesp.setText("执行成功 --- " + eventStub.getOpen());
     }
 
-    private Intent intent2;
-
-
-    @OnClick({R.id.btn_permission, R.id.btn_start,
+    @OnClick({R.id.btn_permission, R.id.btn_start, R.id.btn_btn3,
             R.id.btn_start2, R.id.btn_close, R.id.tv_alipay,
-            R.id.tv_qq, R.id.btn_start3})
+            R.id.tv_qq, R.id.btn_start3, R.id.btn_stop})
     public void onViewClicked(View view) {
         switch (view.getId()) {
             case R.id.btn_permission:
@@ -115,78 +117,69 @@ public class MainActivity extends AppCompatActivity {
                 startActivity(intent);
                 break;
             case R.id.btn_start:
-
-                if (intent2 != null) {
-                    stopService(intent2);
-                }
-                intent2 = new Intent(this, MyAccessibilityService.class);
-                intent2.putExtra("key", "去完成");
-                startService(intent2);
+                MyAccessibilityService.start(this, "去完成");
                 mTvDesp.setText("正在执行“去完成”任务，打开任务列表即可");
                 break;
             case R.id.btn_start2:
-                if (intent2 != null) {
-                    stopService(intent2);
-                }
-                intent2 = new Intent(this, MyAccessibilityService.class);
-                intent2.putExtra("key", "去浏览");
-                startService(intent2);
-
+                MyAccessibilityService.start(this, "去浏览");
                 mTvDesp.setText("正在执行“去浏览”任务，打开任务列表即可");
                 break;
             case R.id.btn_close:
-                if (intent2 != null) {
-                    stopService(intent2);
-                }
-                intent2 = new Intent(this, MyAccessibilityService.class);
-                intent2.putExtra("key", "去搜索");
-                startService(intent2);
+                MyAccessibilityService.start(this, "去搜索");
                 mTvDesp.setText("正在执行“去搜索”任务，打开任务列表即可");
+                break;
+            case R.id.btn_btn3:
+                MyAccessibilityService.start(this, "去逛逛");
+                mTvDesp.setText("正在执行“去逛逛”任务，打开任务列表即可");
                 break;
             case R.id.btn_start3:
                 mLoadingDialog.show("获取中...");
-                UpdataEngine engine = new UpdataEngine();
-
-                engine.getInfo(new StringCallback() {
-                    @Override
-                    public void onError(Call call, Exception e, int id) {
-                        mLoadingDialog.dismiss();
-                        Toast.makeText(MainActivity.this, "请求失败" + e, Toast.LENGTH_SHORT).show();
-                    }
-
-                    @Override
-                    public void onResponse(String response, int id) {
-                        mLoadingDialog.dismiss();
-                        ResultInfo<UpdateInfo> resultInfo;
-                        try {
-                            resultInfo = JSONObject.parseObject(response, new TypeReference<ResultInfo<UpdateInfo>>() {
-                            }.getType());
-                        } catch (Exception e) {
-                            runOnUiThread(() -> {
-                                Toast.makeText(MainActivity.this, "返回数据有误", Toast.LENGTH_SHORT).show();
-                            });
-                            return;
-                        }
-                        if (resultInfo != null) {
-                            if (resultInfo.getCode() == 1) {
-                                success(resultInfo.getData());
-                            } else {
-                                Toast.makeText(MainActivity.this, resultInfo.getMsg(), Toast.LENGTH_SHORT).show();
-                            }
-                        }
-
-                    }
-                });
-
+                checkUpdate();
+                break;
+            case R.id.btn_stop:
+                MyAccessibilityService.stop(this);
                 break;
             case R.id.tv_alipay:
-                //    goToAliPayTransferMoneyPerson(this, "6.66", "好活~当赏~", "2088612672749295");
                 MyUtils.goToAliPayTransferMoney(this, "fkx175670dgp1a3jcsqilb4");
                 break;
             case R.id.tv_qq:
                 chatWithQQ(this, 664846453 + "");
                 break;
         }
+    }
+
+    private void checkUpdate() {
+        UpdataEngine engine = new UpdataEngine();
+        engine.getInfo(new StringCallback() {
+            @Override
+            public void onError(Call call, Exception e, int id) {
+                mLoadingDialog.dismiss();
+                Toast.makeText(MainActivity.this, "请求失败" + e, Toast.LENGTH_SHORT).show();
+            }
+
+            @Override
+            public void onResponse(String response, int id) {
+                mLoadingDialog.dismiss();
+                ResultInfo<UpdateInfo> resultInfo;
+                try {
+                    resultInfo = JSONObject.parseObject(response, new TypeReference<ResultInfo<UpdateInfo>>() {
+                    }.getType());
+                } catch (Exception e) {
+                    runOnUiThread(() -> {
+                        Toast.makeText(MainActivity.this, "返回数据有误", Toast.LENGTH_SHORT).show();
+                    });
+                    return;
+                }
+                if (resultInfo != null) {
+                    if (resultInfo.getCode() == 1) {
+                        success(resultInfo.getData());
+                    } else {
+                        Toast.makeText(MainActivity.this, resultInfo.getMsg(), Toast.LENGTH_SHORT).show();
+                    }
+                }
+
+            }
+        });
     }
 
     private void success(UpdateInfo updateInfo) {

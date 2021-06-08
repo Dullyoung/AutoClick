@@ -1,7 +1,9 @@
 package com.example.autoclick.services;
 
 import android.accessibilityservice.AccessibilityService;
+import android.accessibilityservice.AccessibilityServiceInfo;
 import android.accessibilityservice.GestureDescription;
+import android.content.Context;
 import android.content.Intent;
 import android.graphics.Path;
 import android.os.Build;
@@ -14,11 +16,15 @@ import android.widget.Toast;
 import androidx.annotation.RequiresApi;
 
 import com.example.autoclick.Utils.MyPost;
+import com.example.autoclick.Utils.MyUtils;
 import com.example.autoclick.controler.MainActivity;
 import com.example.autoclick.model.bean.EventStub;
 
 import org.greenrobot.eventbus.EventBus;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Random;
 
 import static android.content.Intent.FLAG_ACTIVITY_NEW_TASK;
@@ -26,6 +32,25 @@ import static android.content.Intent.FLAG_ACTIVITY_NEW_TASK;
 
 public class MyAccessibilityService extends AccessibilityService {
     private static final String TAG = "aaaa";
+
+    public static void start(Context context, String key) {
+        if (MyUtils.isServiceRunning(context, MyAccessibilityService.class.getName())) {
+            keyword = key;
+            stop = false;
+        } else {
+            Intent intent2 = new Intent(context, MyAccessibilityService.class);
+            intent2.putExtra("key", key);
+            context.startService(intent2);
+            stop = false;
+        }
+    }
+
+    public static void stop(Context context) {
+        Intent stopIntent = new Intent(context, MyAccessibilityService.class);
+        stop = context.stopService(stopIntent);
+        EventBus.getDefault().post(new EventStub("停止"));
+        stateTime = 0;
+    }
 
     @Override
     protected void onServiceConnected() {
@@ -52,27 +77,42 @@ public class MyAccessibilityService extends AccessibilityService {
         return START_STICKY;
     }
 
-    private String keyword = "";
+    public static String keyword = "";
     AccessibilityNodeInfo rootInfo = null;
-
 
     private void checkStateTime() {
         if (stop) {
             return;
         }
-        Log.i("stateTime", "在任务列表页？" + isBackClicked + "已经停止了: " + (System.currentTimeMillis() - stateTime) / 1000);
+        Log.i("stateTime", keyword + ",在任务列表页？" + isBackClicked + "已经停止了: " + (System.currentTimeMillis() - stateTime) / 1000);
         if (System.currentTimeMillis() - stateTime > (isBackClicked ? 5000 : 25000)) {
             MyGesture();
             stateTime = System.currentTimeMillis();
         }
-        MyPost.postDelayed(1000, this::checkStateTime);
+        MyPost.postDelayed(1000, () -> {
+            if (!stop) {
+                checkStateTime();
+            }
+        });
     }
 
-    private long stateTime = System.currentTimeMillis();
+    private static long stateTime = 0;
+
+    private long lastFindTime = 0;
 
     @Override
     public void onAccessibilityEvent(AccessibilityEvent event) {
-        stop = false;
+        if (stop) {
+            return;
+        }
+        if (stateTime == 0) {
+            checkStateTime();
+        }
+
+        if (System.currentTimeMillis() - lastFindTime < 1000) {
+            lastFindTime = System.currentTimeMillis();
+            return;
+        }
 
         if (keyword.equals("")) {
             Log.i(TAG, "关键词为空 不执行: ");
@@ -100,7 +140,7 @@ public class MyAccessibilityService extends AccessibilityService {
     public void onDestroy() {
         super.onDestroy();
         stop = true;
-        Log.i(TAG, "onDestroy: ");
+        stateTime=0;
         EventBus.getDefault().post(new EventStub("停止"));
     }
 
@@ -110,19 +150,19 @@ public class MyAccessibilityService extends AccessibilityService {
             return;
         }
         Log.i(TAG, "findByText: 开始查找字段````````" + keyword);
-
         get(rootInfo);
 
     }
 
 
-    private boolean stop = true;
+    private static boolean stop = true;
 
     @Override
     public boolean onUnbind(Intent intent) {
         stop = true;
         Toast.makeText(this, "停止运行", Toast.LENGTH_SHORT).show();
         EventBus.getDefault().post(new EventStub("停止运行"));
+        stateTime=0;
         return super.onUnbind(intent);
     }
 
@@ -168,93 +208,85 @@ public class MyAccessibilityService extends AccessibilityService {
         @Override
         public void onCompleted(GestureDescription gestureDescription) {
             super.onCompleted(gestureDescription);
-            Log.i(TAG, "onCompleted: " + gestureDescription);
         }
 
         @Override
         public void onCancelled(GestureDescription gestureDescription) {
             super.onCancelled(gestureDescription);
-            Log.i(TAG, "onCancelled: " + gestureDescription);
         }
     }
 
 
     private void back(AccessibilityNodeInfo info) {
         if (System.currentTimeMillis() - clickBackTime > 3000) {
-
             performGlobalAction(GLOBAL_ACTION_BACK);
             isBackClicked = true;
             clickBackTime = System.currentTimeMillis();
             Log.i("performBack", "back: ");
             stateTime = System.currentTimeMillis();
-
         }
     }
 
+    private List<String> finishString = new ArrayList<>(Arrays.asList(
+            "任务完成", "任务已经", "全部完成啦", "继续退出", "任务已完成"));
 
-    private AccessibilityNodeInfo get(AccessibilityNodeInfo rootInfo) {
+    private List<String> clickNodeInfo = new ArrayList<>(Arrays.asList(
+            "逛店最多", "去浏览", "去逛逛", "去完成", "去搜索"
+    ));
+
+    private void get(AccessibilityNodeInfo rootInfo) {
         if (rootInfo.getChildCount() > 0) {
             for (int i = 0; i < rootInfo.getChildCount(); i++) {
                 AccessibilityNodeInfo info = rootInfo.getChild(i);
                 if (info == null) {
                     continue;
                 }
-
-
-                if (info.getContentDescription() != null && (
-                        info.getContentDescription().toString().contains("任务完成")
-                                || info.getContentDescription().toString().contains("任务已经")
-                                || info.getContentDescription().toString().contains("全部完成啦")
-                                || info.getContentDescription().toString().contains("继续退出")
-                                || info.getContentDescription().toString().contains("任务已完成"))) {
+                boolean containCD = info.getContentDescription() != null
+                        && finishString.contains(info.getContentDescription().toString());
+                boolean containText = info.getText() != null
+                        && finishString.contains(info.getText().toString());
+                if (containCD || containText) {
                     MyPost.postDelayed(1000, () -> {
                         back(info);
                         Log.i("success", "完成 返回列表 " + info.getText() + "-desp-" + info.getContentDescription());
                     });
-                }
-
-
-                if (info.getText() != null && (
-                        info.getText().toString().contains("任务完成")
-                                || info.getText().toString().contains("任务已经")
-                                || info.getText().toString().contains("全部完成啦")
-                                || info.getText().toString().contains("继续退出")
-                                || info.getText().toString().contains("最多额外可得30000喵币 (10/10)")
-                                || info.getText().toString().contains("任务已完成"))) {
-                    MyPost.postDelayed(1000, () -> {
-                        back(info);
-                        Log.i("success", "完成 返回列表 " + info.getText() + "-desp-" + info.getContentDescription());
-                    });
+                    return;
                 }
 
 
                 if (info.getClassName() != null && info.getClassName().toString().contains("android.widget.Button")) {
-                    if (info.getText() != null && info.getText().toString().contains(keyword)) {
-                        MyPost.postDelayed(2000, () -> {
-                            Log.i("success", "找到节点 点击 " + keyword);
-                            performClick(getClickable(info));
-                            stateTime = System.currentTimeMillis();
-                            isBackClicked = false;
-                        });
+                    if (MainActivity.isOnKeyMode
+                            || (info.getText() != null && info.getText().toString().contains(keyword))) {
+                        if (info.getText() != null && clickNodeInfo.contains(info.getText().toString())) {
+                            MyPost.postDelayed(1000, () -> {
+                                Log.i("success", "找到节点 点击 " + keyword);
+                                performClick(getClickable(info));
+                                stateTime = System.currentTimeMillis();
+                                isBackClicked = false;
+                            });
+                            return;
+                        }
                     }
                 }
 
                 if (info.getClassName() != null && info.getClassName().toString().contains("android.view.View")) {
                     if (info.getText() != null && info.getText().toString().contains("逛店最多")) {
-                        MyPost.postDelayed(2000, () -> {
+                        MyPost.postDelayed(1000, () -> {
                             Log.i("success", "找到节点 点击 " + "逛店最多");
                             performClick(getClickable(info));
                             stateTime = System.currentTimeMillis();
                             isBackClicked = false;
                         });
+                        return;
                     }
                 }
 
                 if (info.getText() != null && info.getText().toString().contains("好的，我知道了")) {
-                    MyPost.postDelayed(2000, () -> {
+                    MyPost.postDelayed(1000, () -> {
                         Log.i("success", "找到领取节点 点击 好的，我知道了 ");
                         performClick(getClickable(info));
                     });
+                    return;
                 }
 
                 if (rootInfo.getChild(i).getChildCount() > 0) {
@@ -266,12 +298,7 @@ public class MyAccessibilityService extends AccessibilityService {
                             + "desp" + info.getContentDescription() + "hascode" + info.hashCode());
                 }
             }
-
-
         }
-
-
-        return null;
     }
 
 
@@ -300,10 +327,8 @@ public class MyAccessibilityService extends AccessibilityService {
             Log.i("click", "点击: " + targetInfo.getText() + "````" + targetInfo.getClassName());
             targetInfo.performAction(AccessibilityNodeInfo.ACTION_CLICK);
             clickTime = System.currentTimeMillis();
-            // MyPost.postDelayed(5000, this::MyGesture);
             isBackClicked = false;
         }
-
     }
 
 

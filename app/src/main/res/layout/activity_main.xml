@@ -7,9 +7,11 @@
     android:layout_height="match_parent">
 
 
-    <androidx.constraintlayout.widget.ConstraintLayout
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:gravity="center"
+        android:orientation="vertical"
         tools:context=".controler.MainActivity">
 
         <TextView
@@ -20,7 +22,7 @@
             android:gravity="center"
             android:textColor="#FB0047"
             android:textSize="16dp"
-          app:layout_constraintTop_toTopOf="parent" />
+            app:layout_constraintTop_toTopOf="parent" />
 
         <TextView
             android:id="@+id/tv_desp"
@@ -40,34 +42,40 @@
             android:text="开关无障碍"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-           app:layout_constraintTop_toBottomOf="@id/tv_desp" />
+            app:layout_constraintTop_toBottomOf="@id/tv_desp" />
 
         <Button
             android:id="@+id/btn_start"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="10dp"
-            android:text="去完成"
-            app:layout_constraintStart_toStartOf="@id/btn_permission"
-            app:layout_constraintTop_toBottomOf="@id/btn_permission" />
+            android:text="去完成" />
 
         <Button
             android:id="@+id/btn_start2"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="10dp"
-            android:text="去浏览"
-            app:layout_constraintStart_toStartOf="@id/btn_permission"
-            app:layout_constraintTop_toBottomOf="@id/btn_start" />
+            android:text="去浏览" />
 
         <Button
             android:id="@+id/btn_close"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="10dp"
-            android:text="去搜索"
-            app:layout_constraintStart_toStartOf="@id/btn_permission"
-            app:layout_constraintTop_toBottomOf="@id/btn_start2" />
+            android:text="去搜索" />
+        <Button
+            android:id="@+id/btn_btn3"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:text="去逛逛" />
+        <Button
+            android:id="@+id/btn_stop"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:text="停止" />
 
         <Button
 
@@ -75,10 +83,20 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="10dp"
-            android:text="检查更新"
-            app:layout_constraintStart_toStartOf="@id/btn_permission"
-            app:layout_constraintTop_toBottomOf="@id/btn_close" />
+            android:text="检查更新" />
 
+        <Switch
+            android:id="@+id/s_oneKey"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:paddingStart="15dp"
+            android:paddingEnd="15dp"
+            android:text="开启后开始任意任务一键匹配所有关键词，但有可能有些不是浏览任务就会卡住，自行选择是否开启" />
 
         <LinearLayout
             android:id="@+id/ll_pay"
@@ -107,10 +125,10 @@
 
         <LinearLayout
             android:id="@+id/ll_chat"
-            android:gravity="center"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="10dp"
+            android:gravity="center"
             android:orientation="horizontal"
             app:layout_constraintTop_toBottomOf="@id/ll_pay">
 
@@ -125,23 +143,22 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginStart="10dp"
-                android:text="有问题联系我~"
+                android:text="有问题/建议点这里反馈~"
                 android:textColor="#29B3FC"
                 android:textSize="20dp" />
         </LinearLayout>
 
         <TextView
-            app:layout_constraintTop_toBottomOf="@id/ll_chat"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:gravity="center"
+            android:padding="10dp"
+            android:text="@string/ps_android_qq"
             android:textColor="#ff9b27"
             android:textSize="18dp"
-            android:padding="10dp"
-            android:gravity="center"
-            android:layout_marginTop="10dp"
-            android:text="@string/ps_android_qq"
-            />
+            app:layout_constraintTop_toBottomOf="@id/ll_chat" />
 
-    </androidx.constraintlayout.widget.ConstraintLayout>
+    </LinearLayout>
 
 </ScrollView>
