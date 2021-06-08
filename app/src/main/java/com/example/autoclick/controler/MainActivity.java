@@ -63,7 +63,7 @@ public class MainActivity extends AppCompatActivity {
         mainActivity = new WeakReference<MainActivity>(this);
         mTvState.setText("说明：\n1.需要自己设置允许后台运行权限，不然部分机型运行一分钟左右后台进程就被系统杀了。" +
                 "\n2.开启无障碍服务 - 大杨的辅助-淘宝" +
-                "\n3.点击方式是根据文字来的，三种任务自己选" +
+                "\n3.点击方式是根据文字来的，任务自己选" +
                 "\n4.打开淘宝任务列表就可以了");
         if (!EventBus.getDefault().isRegistered(this)) {
             EventBus.getDefault().register(this);
@@ -84,12 +84,16 @@ public class MainActivity extends AppCompatActivity {
 
     LoadingDialog mLoadingDialog;
 
+    private long lastBackTime = 0;
+
     @Override
     public void onBackPressed() {
-        Intent home = new Intent(Intent.ACTION_MAIN);
-        home.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
-        home.addCategory(Intent.CATEGORY_HOME);
-        startActivity(home);
+        if (System.currentTimeMillis() - lastBackTime > 2000) {
+            lastBackTime = System.currentTimeMillis();
+            Toast.makeText(this, "再按一次退出", Toast.LENGTH_SHORT).show();
+        } else {
+            finish();
+        }
     }
 
     @Override
@@ -100,6 +104,7 @@ public class MainActivity extends AppCompatActivity {
             EventBus.getDefault().unregister(this);
         }
     }
+
     public static boolean isOnKeyMode = false;
 
     @Subscribe(threadMode = ThreadMode.MAIN)

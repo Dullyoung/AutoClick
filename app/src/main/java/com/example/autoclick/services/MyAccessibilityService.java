@@ -84,7 +84,9 @@ public class MyAccessibilityService extends AccessibilityService {
         if (stop) {
             return;
         }
-        Log.i("stateTime", keyword + ",在任务列表页？" + isBackClicked + "已经停止了: " + (System.currentTimeMillis() - stateTime) / 1000);
+        Log.i("stateTime", "onkey:" + MainActivity.isOnKeyMode +
+                "关键词：" + keyword + ",在任务列表页？" + isBackClicked
+                + "已经停止了: " + (System.currentTimeMillis() - stateTime) / 1000);
         if (System.currentTimeMillis() - stateTime > (isBackClicked ? 5000 : 25000)) {
             MyGesture();
             stateTime = System.currentTimeMillis();
@@ -140,7 +142,7 @@ public class MyAccessibilityService extends AccessibilityService {
     public void onDestroy() {
         super.onDestroy();
         stop = true;
-        stateTime=0;
+        stateTime = 0;
         EventBus.getDefault().post(new EventStub("停止"));
     }
 
@@ -162,7 +164,7 @@ public class MyAccessibilityService extends AccessibilityService {
         stop = true;
         Toast.makeText(this, "停止运行", Toast.LENGTH_SHORT).show();
         EventBus.getDefault().post(new EventStub("停止运行"));
-        stateTime=0;
+        stateTime = 0;
         return super.onUnbind(intent);
     }
 
@@ -222,7 +224,7 @@ public class MyAccessibilityService extends AccessibilityService {
             performGlobalAction(GLOBAL_ACTION_BACK);
             isBackClicked = true;
             clickBackTime = System.currentTimeMillis();
-            Log.i("performBack", "back: ");
+            Log.i("success", "back: ");
             stateTime = System.currentTimeMillis();
         }
     }
@@ -259,7 +261,7 @@ public class MyAccessibilityService extends AccessibilityService {
                             || (info.getText() != null && info.getText().toString().contains(keyword))) {
                         if (info.getText() != null && clickNodeInfo.contains(info.getText().toString())) {
                             MyPost.postDelayed(1000, () -> {
-                                Log.i("success", "找到节点 点击 " + keyword);
+                                Log.i("success", "找到节点 点击 " + info.getText().toString());
                                 performClick(getClickable(info));
                                 stateTime = System.currentTimeMillis();
                                 isBackClicked = false;
