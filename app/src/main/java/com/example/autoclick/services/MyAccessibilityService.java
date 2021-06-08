@@ -237,6 +237,9 @@ public class MyAccessibilityService extends AccessibilityService {
     ));
 
     private void get(AccessibilityNodeInfo rootInfo) {
+        if (rootInfo==null){
+            return;
+        }
         if (rootInfo.getChildCount() > 0) {
             for (int i = 0; i < rootInfo.getChildCount(); i++) {
                 AccessibilityNodeInfo info = rootInfo.getChild(i);
