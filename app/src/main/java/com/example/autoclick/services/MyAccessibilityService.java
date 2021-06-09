@@ -7,6 +7,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.graphics.Path;
 import android.os.Build;
+import android.os.Handler;
 import android.text.TextUtils;
 import android.util.Log;
 import android.view.accessibility.AccessibilityEvent;
@@ -112,9 +113,9 @@ public class MyAccessibilityService extends AccessibilityService {
         }
 
         if (System.currentTimeMillis() - lastFindTime < 1000) {
-            lastFindTime = System.currentTimeMillis();
             return;
         }
+        lastFindTime = System.currentTimeMillis();
 
         if (keyword.equals("")) {
             Log.i(TAG, "关键词为空 不执行: ");
@@ -177,17 +178,27 @@ public class MyAccessibilityService extends AccessibilityService {
             Path path = new Path();
             int x1 = new Random(System.currentTimeMillis()).nextInt(100) + 500;
             int x2 = new Random(System.currentTimeMillis()).nextInt(100) + 500;
-            int y1 = new Random(System.currentTimeMillis()).nextInt(100) + 1000;
-            int y2 = new Random(System.currentTimeMillis()).nextInt(100) + 500;
-            path.moveTo(x1, y1);   //滑动起点
-            path.lineTo(x2, y2);//滑动终点
+            int y1 = new Random(System.currentTimeMillis()).nextInt(100) + 1600;
+            int y2 = new Random(System.currentTimeMillis()).nextInt(100) + 1500;
+            if (isBackClicked) {
+                path.moveTo(x2, y2);   //滑动起点
+                path.lineTo(x1, y1);//滑动终点
+            } else {
+                path.moveTo(x1, y1);   //滑动起点
+                path.lineTo(x2, y2);//滑动终点
+            }
+
             GestureDescription.Builder builder = new GestureDescription.Builder();
             long startTime = new Random(System.currentTimeMillis()).nextInt(100) + 200;
             long duration = new Random(System.currentTimeMillis()).nextInt(100) + 500;
             GestureDescription description = builder.addStroke(new GestureDescription.StrokeDescription(path, startTime, duration)).build();
 
             //100L 第一个是开始的时间，第二个是持续时间
-            dispatchGesture(description, new MyCallBack(), null);
+            try {
+                dispatchGesture(description, new MyCallBack(), new Handler(getMainLooper()));
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
             if (!isBackClicked && System.currentTimeMillis() - scrollTime > 5000) {
                 scrollTime = System.currentTimeMillis();
                 Log.i("MyGesture", "MyGesture: x1:" + x1 + "`y1:" + y1 + "`x2:" + x2 + "`y2:" + y2);
@@ -230,14 +241,15 @@ public class MyAccessibilityService extends AccessibilityService {
     }
 
     private List<String> finishString = new ArrayList<>(Arrays.asList(
-            "任务完成", "任务已经", "全部完成啦", "继续退出", "任务已完成"));
+            "任务完成", "任务已经", "全部完成啦", "继续退出", "任务已完成", "任务完成，30000喵币已到账"
+    ));
 
     private List<String> clickNodeInfo = new ArrayList<>(Arrays.asList(
             "逛店最多", "去浏览", "去逛逛", "去完成", "去搜索"
     ));
 
     private void get(AccessibilityNodeInfo rootInfo) {
-        if (rootInfo==null){
+        if (rootInfo == null) {
             return;
         }
         if (rootInfo.getChildCount() > 0) {
@@ -258,10 +270,8 @@ public class MyAccessibilityService extends AccessibilityService {
                     return;
                 }
 
-
                 if (info.getClassName() != null && info.getClassName().toString().contains("android.widget.Button")) {
-                    if (MainActivity.isOnKeyMode
-                            || (info.getText() != null && info.getText().toString().contains(keyword))) {
+                    if (MainActivity.isOnKeyMode || (info.getText() != null && info.getText().toString().contains(keyword))) {
                         if (info.getText() != null && clickNodeInfo.contains(info.getText().toString())) {
                             MyPost.postDelayed(1000, () -> {
                                 Log.i("success", "找到节点 点击 " + info.getText().toString());
