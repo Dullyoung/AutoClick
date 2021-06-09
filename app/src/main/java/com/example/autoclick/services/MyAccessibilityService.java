@@ -179,18 +179,14 @@ public class MyAccessibilityService extends AccessibilityService {
             int x1 = new Random(System.currentTimeMillis()).nextInt(100) + 500;
             int x2 = new Random(System.currentTimeMillis()).nextInt(100) + 500;
             int y1 = new Random(System.currentTimeMillis()).nextInt(100) + 1600;
-            int y2 = new Random(System.currentTimeMillis()).nextInt(100) + 1500;
-            if (isBackClicked) {
-                path.moveTo(x2, y2);   //滑动起点
-                path.lineTo(x1, y1);//滑动终点
-            } else {
-                path.moveTo(x1, y1);   //滑动起点
-                path.lineTo(x2, y2);//滑动终点
-            }
+            int y2 = new Random(System.currentTimeMillis()).nextInt(100) + 1200;
+            path.moveTo(x2, y2);   //滑动起点
+            path.lineTo(x1, y1);//滑动终点
+            path.lineTo(x2, y2);//滑动终点
 
             GestureDescription.Builder builder = new GestureDescription.Builder();
             long startTime = new Random(System.currentTimeMillis()).nextInt(100) + 200;
-            long duration = new Random(System.currentTimeMillis()).nextInt(100) + 500;
+            long duration = new Random(System.currentTimeMillis()).nextInt(100) + 1000;
             GestureDescription description = builder.addStroke(new GestureDescription.StrokeDescription(path, startTime, duration)).build();
 
             //100L 第一个是开始的时间，第二个是持续时间
@@ -241,7 +237,7 @@ public class MyAccessibilityService extends AccessibilityService {
     }
 
     private List<String> finishString = new ArrayList<>(Arrays.asList(
-            "任务完成", "任务已经", "全部完成啦", "继续退出", "任务已完成", "任务完成，30000喵币已到账"
+            "任务完成", "任务已经", "全部完成啦", "继续退出", "任务已完成", "任务完成，30000喵币已到账","任务已经全部完成啦"
     ));
 
     private List<String> clickNodeInfo = new ArrayList<>(Arrays.asList(
@@ -263,7 +259,7 @@ public class MyAccessibilityService extends AccessibilityService {
                 boolean containText = info.getText() != null
                         && finishString.contains(info.getText().toString());
                 if (containCD || containText) {
-                    MyPost.postDelayed(1000, () -> {
+                    MyPost.postDelayed(2000, () -> {
                         back(info);
                         Log.i("success", "完成 返回列表 " + info.getText() + "-desp-" + info.getContentDescription());
                     });
@@ -273,7 +269,7 @@ public class MyAccessibilityService extends AccessibilityService {
                 if (info.getClassName() != null && info.getClassName().toString().contains("android.widget.Button")) {
                     if (MainActivity.isOnKeyMode || (info.getText() != null && info.getText().toString().contains(keyword))) {
                         if (info.getText() != null && clickNodeInfo.contains(info.getText().toString())) {
-                            MyPost.postDelayed(1000, () -> {
+                            MyPost.postDelayed(2000, () -> {
                                 Log.i("success", "找到节点 点击 " + info.getText().toString());
                                 performClick(getClickable(info));
                                 stateTime = System.currentTimeMillis();
@@ -286,7 +282,7 @@ public class MyAccessibilityService extends AccessibilityService {
 
                 if (info.getClassName() != null && info.getClassName().toString().contains("android.view.View")) {
                     if (info.getText() != null && info.getText().toString().contains("逛店最多")) {
-                        MyPost.postDelayed(1000, () -> {
+                        MyPost.postDelayed(2000, () -> {
                             Log.i("success", "找到节点 点击 " + "逛店最多");
                             performClick(getClickable(info));
                             stateTime = System.currentTimeMillis();
